@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Pencil, Settings, Calendar, AlertCircle, Tag, Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Pencil, Settings, Calendar, AlertCircle, Tag, Cloud, CloudOff, RefreshCw, MessageSquare, BookOpen, ChevronLeft } from 'lucide-react';
 
 const STATUS = {
   NOT_STARTED: 'not_started',
@@ -49,6 +49,16 @@ function formatDateShort(dateStr) {
   if (diffDays === -1) return 'Yesterday';
   if (diffDays > 1 && diffDays <= 7) return date.toLocaleDateString('en-US', { weekday: 'short' });
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatNoteDateFull(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatNoteTime(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 function isToday(dateStr) {
@@ -228,20 +238,20 @@ function TagEditor({ selectedTags, onTagsChange, allTags, isDark }) {
 }
 
 const INITIAL_TASKS = [
-  { id: '1', title: 'Finish the Krasznahorkai book', status: STATUS.NOT_STARTED, tags: ['Learning', 'Personal'], dueDate: null, subtasks: [] },
+  { id: '1', title: 'Finish the Krasznahorkai book', status: STATUS.NOT_STARTED, tags: ['Learning', 'Personal'], dueDate: null, subtasks: [], notes: [] },
   { id: '2', title: 'Exercise 5 times', status: STATUS.NOT_STARTED, tags: ['Health'], dueDate: null, subtasks: [
     { id: '2-1', title: 'Exercise 1', status: STATUS.NOT_STARTED },
     { id: '2-2', title: 'Exercise 2', status: STATUS.NOT_STARTED },
     { id: '2-3', title: 'Exercise 3', status: STATUS.NOT_STARTED },
     { id: '2-4', title: 'Exercise 4', status: STATUS.NOT_STARTED },
     { id: '2-5', title: 'Exercise 5', status: STATUS.NOT_STARTED }
-  ]},
-  { id: '3', title: 'Make progress on personal website', status: STATUS.NOT_STARTED, tags: ['Projects', 'Learning'], dueDate: null, subtasks: [] },
-  { id: '4', title: 'Upskill on AI', status: STATUS.NOT_STARTED, tags: ['Learning', 'Work'], dueDate: null, subtasks: [] },
-  { id: '5', title: 'Think about 2026 strategy', status: STATUS.NOT_STARTED, tags: ['Work', 'Planning'], dueDate: null, subtasks: [] },
-  { id: '6', title: 'Annual reflection', status: STATUS.NOT_STARTED, tags: ['Planning', 'Personal'], dueDate: null, subtasks: [] },
-  { id: '7', title: 'Family visit!', status: STATUS.NOT_STARTED, tags: ['Personal'], dueDate: null, subtasks: [] },
-  { id: '8', title: 'Email Dr Ben', status: STATUS.NOT_STARTED, tags: ['Personal', 'Health'], dueDate: null, subtasks: [] }
+  ], notes: [] },
+  { id: '3', title: 'Make progress on personal website', status: STATUS.NOT_STARTED, tags: ['Projects', 'Learning'], dueDate: null, subtasks: [], notes: [] },
+  { id: '4', title: 'Upskill on AI', status: STATUS.NOT_STARTED, tags: ['Learning', 'Work'], dueDate: null, subtasks: [], notes: [] },
+  { id: '5', title: 'Think about 2026 strategy', status: STATUS.NOT_STARTED, tags: ['Work', 'Planning'], dueDate: null, subtasks: [], notes: [] },
+  { id: '6', title: 'Annual reflection', status: STATUS.NOT_STARTED, tags: ['Planning', 'Personal'], dueDate: null, subtasks: [], notes: [] },
+  { id: '7', title: 'Family visit!', status: STATUS.NOT_STARTED, tags: ['Personal'], dueDate: null, subtasks: [], notes: [] },
+  { id: '8', title: 'Email Dr Ben', status: STATUS.NOT_STARTED, tags: ['Personal', 'Health'], dueDate: null, subtasks: [], notes: [] }
 ];
 
 const LOCAL_STORAGE_KEY = 'vacation-tracker-data';
@@ -424,7 +434,247 @@ function DateBadge({ dueDate, status, isDark }) {
   return <span className="px-1.5 py-0.5 rounded text-xs font-medium flex items-center gap-1" style={{ backgroundColor: bg, color: text }}>{taskOverdue && <AlertCircle className="w-3 h-3" />}<Calendar className="w-3 h-3" />{formatDateShort(dueDate)}</span>;
 }
 
-function TaskItem({ task, onUpdate, allTags, isDark }) {
+// Notes Modal for individual task
+function NotesModal({ isOpen, onClose, task, onUpdateTask, isDark }) {
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [newNoteDate, setNewNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [editDate, setEditDate] = useState('');
+  
+  if (!isOpen || !task) return null;
+  
+  const modalBg = isDark ? '#1f2937' : '#ffffff';
+  const inputBg = isDark ? '#111827' : '#f9fafb';
+  const inputBorder = isDark ? '#374151' : '#d1d5db';
+  const textPrimary = isDark ? '#f3f4f6' : '#111827';
+  const textSecondary = isDark ? '#9ca3af' : '#6b7280';
+  const noteBg = isDark ? '#374151' : '#f3f4f6';
+  
+  const notes = task.notes || [];
+  const sortedNotes = [...notes].sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  const handleAddNote = () => {
+    if (!newNoteContent.trim()) return;
+    const newNote = {
+      id: Date.now().toString(),
+      content: newNoteContent.trim(),
+      date: newNoteDate,
+      createdAt: new Date().toISOString()
+    };
+    onUpdateTask({
+      ...task,
+      notes: [...notes, newNote]
+    });
+    setNewNoteContent('');
+    setNewNoteDate(new Date().toISOString().split('T')[0]);
+  };
+  
+  const handleDeleteNote = (noteId) => {
+    onUpdateTask({
+      ...task,
+      notes: notes.filter(n => n.id !== noteId)
+    });
+  };
+  
+  const handleStartEdit = (note) => {
+    setEditingNoteId(note.id);
+    setEditContent(note.content);
+    setEditDate(note.date);
+  };
+  
+  const handleSaveEdit = () => {
+    onUpdateTask({
+      ...task,
+      notes: notes.map(n => n.id === editingNoteId ? { ...n, content: editContent, date: editDate } : n)
+    });
+    setEditingNoteId(null);
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
+      <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[85vh] overflow-hidden flex flex-col" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
+        <div className="p-4 flex justify-between items-center flex-shrink-0" style={{ borderBottom: `1px solid ${inputBorder}` }}>
+          <div>
+            <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Notes</h2>
+            <p className="text-sm" style={{ color: textSecondary }}>{task.title}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full" style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
+        </div>
+        
+        {/* Add new note */}
+        <div className="p-4 flex-shrink-0" style={{ borderBottom: `1px solid ${inputBorder}` }}>
+          <textarea
+            value={newNoteContent}
+            onChange={(e) => setNewNoteContent(e.target.value)}
+            placeholder="Add a note..."
+            rows={2}
+            className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+            style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+          />
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" style={{ color: textSecondary }} />
+              <input
+                type="date"
+                value={newNoteDate}
+                onChange={(e) => setNewNoteDate(e.target.value)}
+                className="text-sm px-2 py-1 rounded"
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+              />
+            </div>
+            <button
+              onClick={handleAddNote}
+              disabled={!newNoteContent.trim()}
+              className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              Add Note
+            </button>
+          </div>
+        </div>
+        
+        {/* Notes list */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {sortedNotes.length === 0 ? (
+            <p className="text-center py-8" style={{ color: textSecondary }}>No notes yet</p>
+          ) : (
+            sortedNotes.map(note => (
+              <div key={note.id} className="p-3 rounded-lg" style={{ backgroundColor: noteBg }}>
+                {editingNoteId === note.id ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      rows={2}
+                      className="w-full px-2 py-1 rounded text-sm resize-none"
+                      style={{ backgroundColor: inputBg, border: `1px solid #3b82f6`, color: textPrimary }}
+                      autoFocus
+                    />
+                    <div className="flex items-center justify-between">
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="text-sm px-2 py-1 rounded"
+                        style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingNoteId(null)} className="text-sm" style={{ color: textSecondary }}>Cancel</button>
+                        <button onClick={handleSaveEdit} className="text-sm text-blue-500 font-medium">Save</button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm" style={{ color: textPrimary }}>{note.content}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs" style={{ color: textSecondary }}>{formatNoteDateFull(note.date)}</span>
+                      <div className="flex gap-3">
+                        <button onClick={() => handleStartEdit(note)} className="text-xs" style={{ color: textSecondary }}>Edit</button>
+                        <button onClick={() => handleDeleteNote(note.id)} className="text-xs text-red-500">Delete</button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Journal View - chronological timeline of all notes
+function JournalView({ tasks, onUpdateTask, onClose, isDark, goal }) {
+  const bgColor = isDark ? '#111827' : '#f9fafb';
+  const cardBg = isDark ? '#1f2937' : '#ffffff';
+  const textPrimary = isDark ? '#f3f4f6' : '#111827';
+  const textSecondary = isDark ? '#9ca3af' : '#6b7280';
+  const borderColor = isDark ? '#374151' : '#e5e7eb';
+  
+  // Gather all notes with task info
+  const allNotes = tasks.flatMap(task => 
+    (task.notes || []).map(note => ({
+      ...note,
+      taskId: task.id,
+      taskTitle: task.title,
+      taskTags: task.tags
+    }))
+  );
+  
+  // Sort by date descending
+  const sortedNotes = allNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  // Group by date
+  const groupedByDate = sortedNotes.reduce((acc, note) => {
+    const dateKey = note.date;
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(note);
+    return acc;
+  }, {});
+  
+  const dateKeys = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+  
+  return (
+    <div className="fixed inset-0 z-50" style={{ backgroundColor: bgColor }}>
+      {/* Header */}
+      <div className="sticky top-0 z-10 px-4 py-4 flex items-center gap-3" style={{ backgroundColor: bgColor, borderBottom: `1px solid ${borderColor}` }}>
+        <button onClick={onClose} className="p-2 -ml-2 rounded-full" style={{ color: textSecondary }}>
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: textPrimary }}>Journal</h1>
+          <p className="text-sm" style={{ color: textSecondary }}>{goal.title}</p>
+        </div>
+      </div>
+      
+      {/* Notes timeline */}
+      <div className="px-4 py-4 pb-24 overflow-y-auto" style={{ height: 'calc(100vh - 72px)' }}>
+        {dateKeys.length === 0 ? (
+          <div className="text-center py-16">
+            <MessageSquare className="w-12 h-12 mx-auto mb-4" style={{ color: textSecondary }} />
+            <p className="text-lg font-medium" style={{ color: textPrimary }}>No notes yet</p>
+            <p className="text-sm mt-1" style={{ color: textSecondary }}>Add notes to your tasks to see them here</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {dateKeys.map(dateKey => (
+              <div key={dateKey}>
+                {/* Date header */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <h2 className="text-sm font-semibold" style={{ color: textPrimary }}>
+                    {formatNoteDateFull(dateKey)}
+                  </h2>
+                </div>
+                
+                {/* Notes for this date */}
+                <div className="ml-4 pl-4 space-y-3" style={{ borderLeft: `2px solid ${borderColor}` }}>
+                  {groupedByDate[dateKey].map(note => (
+                    <div key={note.id} className="p-3 rounded-lg" style={{ backgroundColor: cardBg }}>
+                      <p className="text-sm" style={{ color: textPrimary }}>{note.content}</p>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: textSecondary }}>
+                          {note.taskTitle}
+                        </span>
+                        {note.taskTags.slice(0, 2).map(tag => (
+                          <TagBadge key={tag} tag={tag} isDark={isDark} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [titleValue, setTitleValue] = useState(task.title);
@@ -450,6 +700,7 @@ function TaskItem({ task, onUpdate, allTags, isDark }) {
   
   const completedSubtasks = task.subtasks.filter(st => st.status === STATUS.COMPLETE).length;
   const hasSubtasks = task.subtasks.length > 0;
+  const noteCount = (task.notes || []).length;
   
   const cardBg = isDark ? '#1f2937' : '#ffffff';
   const cardBorder = isDark ? '#374151' : '#f3f4f6';
@@ -479,7 +730,13 @@ function TaskItem({ task, onUpdate, allTags, isDark }) {
                   {dueDateValue && <button onClick={() => setDueDateValue('')} style={{ color: textMuted }}><X className="w-3 h-3" /></button>}
                 </div>
                 <TagEditor selectedTags={task.tags} onTagsChange={(tags) => onUpdate({ ...task, tags })} allTags={allTags} isDark={isDark} />
-                <button onClick={handleSave} className="text-sm text-blue-500 font-medium">Done</button>
+                <div className="flex items-center gap-3">
+                  <button onClick={handleSave} className="text-sm text-blue-500 font-medium">Done</button>
+                  <button onClick={() => onOpenNotes(task)} className="text-sm flex items-center gap-1" style={{ color: textSecondary }}>
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    {noteCount > 0 ? `${noteCount} notes` : 'Add note'}
+                  </button>
+                </div>
               </div>
             ) : (
               <>
@@ -487,6 +744,12 @@ function TaskItem({ task, onUpdate, allTags, isDark }) {
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <DateBadge dueDate={task.dueDate} status={task.status} isDark={isDark} />
                   {task.tags.map(tag => <TagBadge key={tag} tag={tag} isDark={isDark} />)}
+                  {noteCount > 0 && (
+                    <button onClick={() => onOpenNotes(task)} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}>
+                      <MessageSquare className="w-3 h-3" />
+                      {noteCount}
+                    </button>
+                  )}
                   {hasSubtasks && (
                     <>
                       <span className="text-xs" style={{ color: textMuted }}>·</span>
@@ -537,7 +800,7 @@ function AddTaskModal({ isOpen, onClose, onAdd, allTags, isDark }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAdd({ id: Date.now().toString(), title: title.trim(), status: STATUS.NOT_STARTED, tags: selectedTags, dueDate: dueDate || null, subtasks: [] });
+    onAdd({ id: Date.now().toString(), title: title.trim(), status: STATUS.NOT_STARTED, tags: selectedTags, dueDate: dueDate || null, subtasks: [], notes: [] });
     setTitle(''); setSelectedTags([]); setDueDate(''); onClose();
   };
   
@@ -620,12 +883,15 @@ export default function VacationTracker() {
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showJournal, setShowJournal] = useState(false);
+  const [notesTask, setNotesTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState(SYNC_STATUS.SYNCED);
   const [isDark, setIsDark] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
   
   const allTags = [...new Set(tasks.flatMap(t => t.tags))];
+  const totalNotes = tasks.reduce((sum, t) => sum + (t.notes || []).length, 0);
   
   // Debounced save to API
   const debouncedSave = useDebounce(async (tasksToSave, goalToSave) => {
@@ -694,15 +960,18 @@ export default function VacationTracker() {
       try {
         const data = await fetchFromAPI();
         if (data.tasks) {
-          setTasks(data.tasks);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.tasks));
+          // Ensure notes array exists on all tasks
+          const tasksWithNotes = data.tasks.map(t => ({ ...t, notes: t.notes || [] }));
+          setTasks(tasksWithNotes);
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasksWithNotes));
         } else {
           // No remote data, try localStorage or use initial
           const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
           const localTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
-          setTasks(localTasks);
+          const tasksWithNotes = localTasks.map(t => ({ ...t, notes: t.notes || [] }));
+          setTasks(tasksWithNotes);
           // Push local data to remote
-          await saveToAPI(localTasks, data.goal || DEFAULT_GOAL);
+          await saveToAPI(tasksWithNotes, data.goal || DEFAULT_GOAL);
         }
         if (data.goal) {
           setGoal(data.goal);
@@ -714,7 +983,8 @@ export default function VacationTracker() {
         // Offline: load from localStorage
         setSyncStatus(SYNC_STATUS.OFFLINE);
         const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        setTasks(saved ? JSON.parse(saved) : INITIAL_TASKS);
+        const localTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
+        setTasks(localTasks.map(t => ({ ...t, notes: t.notes || [] })));
         const savedGoal = localStorage.getItem(LOCAL_GOAL_KEY);
         if (savedGoal) setGoal(JSON.parse(savedGoal));
       }
@@ -736,6 +1006,14 @@ export default function VacationTracker() {
     setGoal(newGoal);
     localStorage.setItem(LOCAL_GOAL_KEY, JSON.stringify(newGoal));
     debouncedSave(tasks, newGoal);
+  };
+  
+  const handleUpdateTask = (updatedTask) => {
+    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+    // Update notesTask if it's the same task
+    if (notesTask && notesTask.id === updatedTask.id) {
+      setNotesTask(updatedTask);
+    }
   };
   
   let filteredTasks = tasks;
@@ -767,6 +1045,11 @@ export default function VacationTracker() {
   
   if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
   
+  // Show Journal View
+  if (showJournal) {
+    return <JournalView tasks={tasks} onUpdateTask={handleUpdateTask} onClose={() => setShowJournal(false)} isDark={isDark} goal={goal} />;
+  }
+  
   return (
     <div className="min-h-screen" style={{ backgroundColor: bgColor }}>
       <div className="px-4 pt-6 pb-6" style={{ background: gradient }}>
@@ -781,6 +1064,14 @@ export default function VacationTracker() {
           </div>
           <div className="flex items-center gap-3">
             <CircularCountdown daysLeft={daysLeft} totalDays={totalDays} darkText={darkText} />
+            <button onClick={() => setShowJournal(true)} className="relative" style={{ color: darkText ? 'rgba(0,0,0,0.7)' : 'white' }}>
+              <BookOpen className="w-5 h-5" />
+              {totalNotes > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
+                  {totalNotes > 9 ? '9+' : totalNotes}
+                </span>
+              )}
+            </button>
             <button onClick={() => setShowSettingsModal(true)} style={{ color: darkText ? 'rgba(0,0,0,0.7)' : 'white' }}><Settings className="w-5 h-5" /></button>
           </div>
         </div>
@@ -811,7 +1102,7 @@ export default function VacationTracker() {
       </div>
       
       <div className="px-4 mt-4 pb-24 space-y-2">
-        {sortedTasks.map(task => <TaskItem key={task.id} task={task} onUpdate={(t) => setTasks(tasks.map(x => x.id === t.id ? t : x))} allTags={allTags} isDark={isDark} />)}
+        {sortedTasks.map(task => <TaskItem key={task.id} task={task} onUpdate={handleUpdateTask} allTags={allTags} isDark={isDark} onOpenNotes={setNotesTask} />)}
         {!sortedTasks.length && <div className="text-center py-12" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
       </div>
       
@@ -820,6 +1111,7 @@ export default function VacationTracker() {
       <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} isDark={isDark} />
       <AddTaskModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onAdd={(t) => setTasks([...tasks, t])} allTags={allTags} isDark={isDark} />
       <GoalSettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} goal={goal} onSave={handleGoalSave} isDark={isDark} />
+      <NotesModal isOpen={!!notesTask} onClose={() => setNotesTask(null)} task={notesTask} onUpdateTask={handleUpdateTask} isDark={isDark} />
     </div>
   );
 }
