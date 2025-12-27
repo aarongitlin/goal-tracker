@@ -317,6 +317,7 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, isDark }) {
 function StatusButton({ status, onTap, onLongPress, size = 'normal', isDark }) {
   const longPressRef = useRef(null);
   const didLongPress = useRef(false);
+  const isTouch = useRef(false);
   const LONG_PRESS_DURATION = 500;
   
   const configs = {
@@ -354,13 +355,40 @@ function StatusButton({ status, onTap, onLongPress, size = 'normal', isDark }) {
     }
   };
   
+  // Touch handlers
+  const handleTouchStart = () => {
+    isTouch.current = true;
+    startPress();
+  };
+  
+  const handleTouchEnd = (e) => {
+    e.preventDefault(); // Prevent synthetic click event
+    endPress();
+  };
+  
+  // Mouse handlers - only fire if not a touch device
+  const handleMouseDown = () => {
+    if (isTouch.current) return;
+    startPress();
+  };
+  
+  const handleMouseUp = () => {
+    if (isTouch.current) return;
+    endPress();
+  };
+  
+  const handleMouseLeave = () => {
+    if (isTouch.current) return;
+    cancelPress();
+  };
+  
   return (
     <button 
-      onMouseDown={startPress}
-      onMouseUp={endPress}
-      onMouseLeave={cancelPress}
-      onTouchStart={startPress}
-      onTouchEnd={endPress}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       onTouchCancel={cancelPress}
       onClick={(e) => e.preventDefault()}
       className={`${sizeClass} rounded-full flex items-center justify-center flex-shrink-0 select-none touch-manipulation`} 
