@@ -256,6 +256,7 @@ const INITIAL_TASKS = [
 
 const LOCAL_STORAGE_KEY = 'vacation-tracker-data';
 const LOCAL_GOAL_KEY = 'vacation-tracker-goal';
+const LOCAL_NOTES_KEY = 'vacation-tracker-notes';
 const DEFAULT_GOAL = { title: 'Vacation Goals', startDate: '2025-12-21', endDate: '2026-01-07' };
 
 function CircularCountdown({ daysLeft, totalDays, size = 48, darkText = false }) {
@@ -586,22 +587,36 @@ function NotesModal({ isOpen, onClose, task, onUpdateTask, isDark }) {
 }
 
 // Journal View - chronological timeline of all notes
-function JournalView({ tasks, onUpdateTask, onClose, isDark, goal }) {
+function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneNotes, onClose, onOpenAddModal, isDark, goal }) {
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [editDate, setEditDate] = useState('');
+  
   const bgColor = isDark ? '#111827' : '#f9fafb';
   const cardBg = isDark ? '#1f2937' : '#ffffff';
   const textPrimary = isDark ? '#f3f4f6' : '#111827';
   const textSecondary = isDark ? '#9ca3af' : '#6b7280';
   const borderColor = isDark ? '#374151' : '#e5e7eb';
+  const inputBg = isDark ? '#111827' : '#f9fafb';
+  const inputBorder = isDark ? '#374151' : '#d1d5db';
   
-  // Gather all notes with task info
-  const allNotes = tasks.flatMap(task => 
+  // Gather all notes: task notes + standalone notes
+  const taskNotes = tasks.flatMap(task => 
     (task.notes || []).map(note => ({
       ...note,
+      type: 'task',
       taskId: task.id,
       taskTitle: task.title,
       taskTags: task.tags
     }))
   );
+  
+  const standaloneWithType = standaloneNotes.map(note => ({
+    ...note,
+    type: 'standalone'
+  }));
+  
+  const allNotes = [...taskNotes, ...standaloneWithType];
   
   // Sort by date descending
   const sortedNotes = allNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -615,6 +630,45 @@ function JournalView({ tasks, onUpdateTask, onClose, isDark, goal }) {
   }, {});
   
   const dateKeys = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+  
+  const handleStartEdit = (note) => {
+    setEditingNoteId(note.id);
+    setEditContent(note.content);
+    setEditDate(note.date);
+  };
+  
+  const handleSaveEdit = (note) => {
+    if (note.type === 'standalone') {
+      onUpdateStandaloneNotes(standaloneNotes.map(n => 
+        n.id === note.id ? { ...n, content: editContent, date: editDate } : n
+      ));
+    } else {
+      const task = tasks.find(t => t.id === note.taskId);
+      if (task) {
+        onUpdateTask({
+          ...task,
+          notes: task.notes.map(n => 
+            n.id === note.id ? { ...n, content: editContent, date: editDate } : n
+          )
+        });
+      }
+    }
+    setEditingNoteId(null);
+  };
+  
+  const handleDeleteNote = (note) => {
+    if (note.type === 'standalone') {
+      onUpdateStandaloneNotes(standaloneNotes.filter(n => n.id !== note.id));
+    } else {
+      const task = tasks.find(t => t.id === note.taskId);
+      if (task) {
+        onUpdateTask({
+          ...task,
+          notes: task.notes.filter(n => n.id !== note.id)
+        });
+      }
+    }
+  };
   
   return (
     <div className="fixed inset-0 z-50" style={{ backgroundColor: bgColor }}>
@@ -635,7 +689,7 @@ function JournalView({ tasks, onUpdateTask, onClose, isDark, goal }) {
           <div className="text-center py-16">
             <MessageSquare className="w-12 h-12 mx-auto mb-4" style={{ color: textSecondary }} />
             <p className="text-lg font-medium" style={{ color: textPrimary }}>No notes yet</p>
-            <p className="text-sm mt-1" style={{ color: textSecondary }}>Add notes to your tasks to see them here</p>
+            <p className="text-sm mt-1" style={{ color: textSecondary }}>Tap + to add your first note</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -653,15 +707,54 @@ function JournalView({ tasks, onUpdateTask, onClose, isDark, goal }) {
                 <div className="ml-4 pl-4 space-y-3" style={{ borderLeft: `2px solid ${borderColor}` }}>
                   {groupedByDate[dateKey].map(note => (
                     <div key={note.id} className="p-3 rounded-lg" style={{ backgroundColor: cardBg }}>
-                      <p className="text-sm" style={{ color: textPrimary }}>{note.content}</p>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: textSecondary }}>
-                          {note.taskTitle}
-                        </span>
-                        {note.taskTags.slice(0, 2).map(tag => (
-                          <TagBadge key={tag} tag={tag} isDark={isDark} />
-                        ))}
-                      </div>
+                      {editingNoteId === note.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            rows={2}
+                            className="w-full px-2 py-1 rounded text-sm resize-none"
+                            style={{ backgroundColor: inputBg, border: `1px solid #3b82f6`, color: textPrimary }}
+                            autoFocus
+                          />
+                          <div className="flex items-center justify-between">
+                            <input
+                              type="date"
+                              value={editDate}
+                              onChange={(e) => setEditDate(e.target.value)}
+                              className="text-sm px-2 py-1 rounded"
+                              style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+                            />
+                            <div className="flex gap-2">
+                              <button onClick={() => setEditingNoteId(null)} className="text-sm" style={{ color: textSecondary }}>Cancel</button>
+                              <button onClick={() => handleSaveEdit(note)} className="text-sm text-blue-500 font-medium">Save</button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm" style={{ color: textPrimary }}>{note.content}</p>
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            {note.type === 'task' ? (
+                              <>
+                                <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: textSecondary }}>
+                                  {note.taskTitle}
+                                </span>
+                                {note.taskTags.slice(0, 2).map(tag => (
+                                  <TagBadge key={tag} tag={tag} isDark={isDark} />
+                                ))}
+                              </>
+                            ) : (
+                              <span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}>
+                                Journal Entry
+                              </span>
+                            )}
+                            <span className="flex-1" />
+                            <button onClick={() => handleStartEdit(note)} className="text-xs" style={{ color: textSecondary }}>Edit</button>
+                            <button onClick={() => handleDeleteNote(note)} className="text-xs text-red-500">Delete</button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -670,6 +763,11 @@ function JournalView({ tasks, onUpdateTask, onClose, isDark, goal }) {
           </div>
         )}
       </div>
+      
+      {/* FAB */}
+      <button onClick={onOpenAddModal} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center">
+        <Plus className="w-6 h-6" />
+      </button>
     </div>
   );
 }
@@ -792,16 +890,56 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
   );
 }
 
-function AddTaskModal({ isOpen, onClose, onAdd, allTags, isDark }) {
+// Unified Add Modal with tabs
+function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, isDark }) {
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  
+  // Task form state
   const [title, setTitle] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [dueDate, setDueDate] = useState('');
   
-  const handleSubmit = (e) => {
+  // Note form state
+  const [noteContent, setNoteContent] = useState('');
+  const [noteDate, setNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
+  
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(defaultTab);
+      setTitle('');
+      setSelectedTags([]);
+      setDueDate('');
+      setNoteContent('');
+      setNoteDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [isOpen, defaultTab]);
+  
+  const handleSubmitTask = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onAdd({ id: Date.now().toString(), title: title.trim(), status: STATUS.NOT_STARTED, tags: selectedTags, dueDate: dueDate || null, subtasks: [], notes: [] });
-    setTitle(''); setSelectedTags([]); setDueDate(''); onClose();
+    onAddTask({ 
+      id: Date.now().toString(), 
+      title: title.trim(), 
+      status: STATUS.NOT_STARTED, 
+      tags: selectedTags, 
+      dueDate: dueDate || null, 
+      subtasks: [], 
+      notes: [] 
+    });
+    onClose();
+  };
+  
+  const handleSubmitNote = (e) => {
+    e.preventDefault();
+    if (!noteContent.trim()) return;
+    onAddNote({
+      id: Date.now().toString(),
+      content: noteContent.trim(),
+      date: noteDate,
+      createdAt: new Date().toISOString()
+    });
+    onClose();
   };
   
   if (!isOpen) return null;
@@ -811,29 +949,104 @@ function AddTaskModal({ isOpen, onClose, onAdd, allTags, isDark }) {
   const inputBorder = isDark ? '#374151' : '#d1d5db';
   const textPrimary = isDark ? '#f3f4f6' : '#111827';
   const textSecondary = isDark ? '#9ca3af' : '#374151';
+  const tabBg = isDark ? '#374151' : '#f3f4f6';
+  const tabActiveBg = '#3b82f6';
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
-      <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: modalBg }}>
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
+      <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
-          <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Add Task</h2>
+          <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Add New</h2>
           <button onClick={onClose} style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Task Title</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} placeholder="What do you want to accomplish?" autoFocus />
+        
+        {/* Tabs */}
+        <div className="p-4 pb-0">
+          <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: tabBg }}>
+            <button
+              onClick={() => setActiveTab('task')}
+              className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors"
+              style={{ 
+                backgroundColor: activeTab === 'task' ? tabActiveBg : 'transparent',
+                color: activeTab === 'task' ? 'white' : textSecondary
+              }}
+            >
+              Task
+            </button>
+            <button
+              onClick={() => setActiveTab('note')}
+              className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors"
+              style={{ 
+                backgroundColor: activeTab === 'note' ? tabActiveBg : 'transparent',
+                color: activeTab === 'note' ? 'white' : textSecondary
+              }}
+            >
+              Note
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Due Date</label>
-            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: textSecondary }}>Tags</label>
-            <TagEditor selectedTags={selectedTags} onTagsChange={setSelectedTags} allTags={allTags} isDark={isDark} />
-          </div>
-          <button type="submit" className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium">Add Task</button>
-        </form>
+        </div>
+        
+        {/* Task Form */}
+        {activeTab === 'task' && (
+          <form onSubmit={handleSubmitTask} className="p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Task Title</label>
+              <input 
+                type="text" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                className="w-full px-3 py-2 rounded-lg" 
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} 
+                placeholder="What do you want to accomplish?" 
+                autoFocus 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Due Date</label>
+              <input 
+                type="date" 
+                value={dueDate} 
+                onChange={(e) => setDueDate(e.target.value)} 
+                className="w-full px-3 py-2 rounded-lg" 
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: textSecondary }}>Tags</label>
+              <TagEditor selectedTags={selectedTags} onTagsChange={setSelectedTags} allTags={allTags} isDark={isDark} />
+            </div>
+            <button type="submit" className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium">Add Task</button>
+          </form>
+        )}
+        
+        {/* Note Form */}
+        {activeTab === 'note' && (
+          <form onSubmit={handleSubmitNote} className="p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Note</label>
+              <textarea
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                placeholder="What's on your mind?"
+                rows={4}
+                className="w-full px-3 py-2 rounded-lg resize-none"
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Date</label>
+              <input
+                type="date"
+                value={noteDate}
+                onChange={(e) => setNoteDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg"
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+              />
+            </div>
+            <button type="submit" className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium">Add Note</button>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -865,11 +1078,11 @@ async function fetchFromAPI() {
   return response.json();
 }
 
-async function saveToAPI(tasks, goal) {
+async function saveToAPI(tasks, goal, standaloneNotes) {
   const response = await fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tasks, goal })
+    body: JSON.stringify({ tasks, goal, standaloneNotes })
   });
   if (!response.ok) throw new Error('Failed to save');
   return response.json();
@@ -877,11 +1090,13 @@ async function saveToAPI(tasks, goal) {
 
 export default function VacationTracker() {
   const [tasks, setTasks] = useState([]);
+  const [standaloneNotes, setStandaloneNotes] = useState([]);
   const [goal, setGoal] = useState(DEFAULT_GOAL);
   const [filterDate, setFilterDate] = useState(DATE_FILTERS.ALL);
   const [selectedTags, setSelectedTags] = useState([]);
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addModalDefaultTab, setAddModalDefaultTab] = useState('task');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showJournal, setShowJournal] = useState(false);
   const [notesTask, setNotesTask] = useState(null);
@@ -891,13 +1106,14 @@ export default function VacationTracker() {
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
   
   const allTags = [...new Set(tasks.flatMap(t => t.tags))];
-  const totalNotes = tasks.reduce((sum, t) => sum + (t.notes || []).length, 0);
+  const taskNotesCount = tasks.reduce((sum, t) => sum + (t.notes || []).length, 0);
+  const totalNotes = taskNotesCount + standaloneNotes.length;
   
   // Debounced save to API
-  const debouncedSave = useDebounce(async (tasksToSave, goalToSave) => {
+  const debouncedSave = useDebounce(async (tasksToSave, goalToSave, notesToSave) => {
     setSyncStatus(SYNC_STATUS.SYNCING);
     try {
-      await saveToAPI(tasksToSave, goalToSave);
+      await saveToAPI(tasksToSave, goalToSave, notesToSave);
       setSyncStatus(SYNC_STATUS.SYNCED);
     } catch (error) {
       console.error('Sync error:', error);
@@ -917,6 +1133,10 @@ export default function VacationTracker() {
       if (data.goal) {
         setGoal(data.goal);
         localStorage.setItem(LOCAL_GOAL_KEY, JSON.stringify(data.goal));
+      }
+      if (data.standaloneNotes) {
+        setStandaloneNotes(data.standaloneNotes);
+        localStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(data.standaloneNotes));
       }
       setSyncStatus(SYNC_STATUS.SYNCED);
     } catch (error) {
@@ -971,11 +1191,20 @@ export default function VacationTracker() {
           const tasksWithNotes = localTasks.map(t => ({ ...t, notes: t.notes || [] }));
           setTasks(tasksWithNotes);
           // Push local data to remote
-          await saveToAPI(tasksWithNotes, data.goal || DEFAULT_GOAL);
+          const savedNotes = localStorage.getItem(LOCAL_NOTES_KEY);
+          const localNotes = savedNotes ? JSON.parse(savedNotes) : [];
+          await saveToAPI(tasksWithNotes, data.goal || DEFAULT_GOAL, localNotes);
         }
         if (data.goal) {
           setGoal(data.goal);
           localStorage.setItem(LOCAL_GOAL_KEY, JSON.stringify(data.goal));
+        }
+        if (data.standaloneNotes) {
+          setStandaloneNotes(data.standaloneNotes);
+          localStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(data.standaloneNotes));
+        } else {
+          const savedNotes = localStorage.getItem(LOCAL_NOTES_KEY);
+          if (savedNotes) setStandaloneNotes(JSON.parse(savedNotes));
         }
         setSyncStatus(SYNC_STATUS.SYNCED);
       } catch (error) {
@@ -987,6 +1216,8 @@ export default function VacationTracker() {
         setTasks(localTasks.map(t => ({ ...t, notes: t.notes || [] })));
         const savedGoal = localStorage.getItem(LOCAL_GOAL_KEY);
         if (savedGoal) setGoal(JSON.parse(savedGoal));
+        const savedNotes = localStorage.getItem(LOCAL_NOTES_KEY);
+        if (savedNotes) setStandaloneNotes(JSON.parse(savedNotes));
       }
       setLoading(false);
     }
@@ -997,15 +1228,23 @@ export default function VacationTracker() {
   useEffect(() => {
     if (!loading && tasks.length) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
-      debouncedSave(tasks, goal);
+      debouncedSave(tasks, goal, standaloneNotes);
     }
   }, [tasks, loading]);
+  
+  // Save standalone notes when they change
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(standaloneNotes));
+      debouncedSave(tasks, goal, standaloneNotes);
+    }
+  }, [standaloneNotes, loading]);
   
   // Save goal when it changes
   const handleGoalSave = (newGoal) => {
     setGoal(newGoal);
     localStorage.setItem(LOCAL_GOAL_KEY, JSON.stringify(newGoal));
-    debouncedSave(tasks, newGoal);
+    debouncedSave(tasks, newGoal, standaloneNotes);
   };
   
   const handleUpdateTask = (updatedTask) => {
@@ -1014,6 +1253,15 @@ export default function VacationTracker() {
     if (notesTask && notesTask.id === updatedTask.id) {
       setNotesTask(updatedTask);
     }
+  };
+  
+  const handleOpenAddModal = (defaultTab) => {
+    setAddModalDefaultTab(defaultTab);
+    setShowAddModal(true);
+  };
+  
+  const handleAddNote = (note) => {
+    setStandaloneNotes([...standaloneNotes, note]);
   };
   
   let filteredTasks = tasks;
@@ -1047,7 +1295,18 @@ export default function VacationTracker() {
   
   // Show Journal View
   if (showJournal) {
-    return <JournalView tasks={tasks} onUpdateTask={handleUpdateTask} onClose={() => setShowJournal(false)} isDark={isDark} goal={goal} />;
+    return (
+      <JournalView 
+        tasks={tasks} 
+        standaloneNotes={standaloneNotes}
+        onUpdateTask={handleUpdateTask} 
+        onUpdateStandaloneNotes={setStandaloneNotes}
+        onClose={() => setShowJournal(false)} 
+        onOpenAddModal={() => handleOpenAddModal('note')}
+        isDark={isDark} 
+        goal={goal} 
+      />
+    );
   }
   
   return (
@@ -1106,10 +1365,18 @@ export default function VacationTracker() {
         {!sortedTasks.length && <div className="text-center py-12" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
       </div>
       
-      <button onClick={() => setShowAddModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center"><Plus className="w-6 h-6" /></button>
+      <button onClick={() => handleOpenAddModal('task')} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center"><Plus className="w-6 h-6" /></button>
       
       <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} isDark={isDark} />
-      <AddTaskModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onAdd={(t) => setTasks([...tasks, t])} allTags={allTags} isDark={isDark} />
+      <AddModal 
+        isOpen={showAddModal} 
+        onClose={() => setShowAddModal(false)} 
+        defaultTab={addModalDefaultTab}
+        onAddTask={(t) => setTasks([...tasks, t])} 
+        onAddNote={handleAddNote}
+        allTags={allTags} 
+        isDark={isDark} 
+      />
       <GoalSettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} goal={goal} onSave={handleGoalSave} isDark={isDark} />
       <NotesModal isOpen={!!notesTask} onClose={() => setNotesTask(null)} task={notesTask} onUpdateTask={handleUpdateTask} isDark={isDark} />
     </div>
