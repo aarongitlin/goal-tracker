@@ -671,9 +671,16 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
   };
   
   return (
-    <div className="fixed inset-0 z-50" style={{ backgroundColor: bgColor }}>
-      {/* Header */}
-      <div className="sticky top-0 z-10 px-4 py-4 flex items-center gap-3" style={{ backgroundColor: bgColor, borderBottom: `1px solid ${borderColor}` }}>
+    <div className="fixed inset-0 z-40 flex flex-col" style={{ backgroundColor: bgColor }}>
+      {/* Header with safe area */}
+      <div 
+        className="sticky top-0 z-10 px-4 pb-4 flex items-center gap-3" 
+        style={{ 
+          backgroundColor: bgColor, 
+          borderBottom: `1px solid ${borderColor}`,
+          paddingTop: 'max(1rem, env(safe-area-inset-top))'
+        }}
+      >
         <button onClick={onClose} className="p-2 -ml-2 rounded-full" style={{ color: textSecondary }}>
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -684,7 +691,7 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
       </div>
       
       {/* Notes timeline */}
-      <div className="px-4 py-4 pb-24 overflow-y-auto" style={{ height: 'calc(100vh - 72px)' }}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {dateKeys.length === 0 ? (
           <div className="text-center py-16">
             <MessageSquare className="w-12 h-12 mx-auto mb-4" style={{ color: textSecondary }} />
@@ -765,7 +772,11 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
       </div>
       
       {/* FAB */}
-      <button onClick={onOpenAddModal} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center">
+      <button 
+        onClick={onOpenAddModal} 
+        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-50"
+        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <Plus className="w-6 h-6" />
       </button>
     </div>
@@ -953,7 +964,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
   const tabActiveBg = '#3b82f6';
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]" onClick={onClose}>
       <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
           <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Add New</h2>
@@ -1293,24 +1304,23 @@ export default function VacationTracker() {
   
   if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
   
-  // Show Journal View
-  if (showJournal) {
-    return (
-      <JournalView 
-        tasks={tasks} 
-        standaloneNotes={standaloneNotes}
-        onUpdateTask={handleUpdateTask} 
-        onUpdateStandaloneNotes={setStandaloneNotes}
-        onClose={() => setShowJournal(false)} 
-        onOpenAddModal={() => handleOpenAddModal('note')}
-        isDark={isDark} 
-        goal={goal} 
-      />
-    );
-  }
-  
   return (
     <div className="min-h-screen" style={{ backgroundColor: bgColor }}>
+      {/* Journal View (renders on top when active) */}
+      {showJournal && (
+        <JournalView 
+          tasks={tasks} 
+          standaloneNotes={standaloneNotes}
+          onUpdateTask={handleUpdateTask} 
+          onUpdateStandaloneNotes={setStandaloneNotes}
+          onClose={() => setShowJournal(false)} 
+          onOpenAddModal={() => handleOpenAddModal('note')}
+          isDark={isDark} 
+          goal={goal} 
+        />
+      )}
+      
+      {/* Main Tasks View */}
       <div className="px-4 pt-6 pb-6" style={{ background: gradient }}>
         <div className="flex items-start justify-between">
           <div>
@@ -1365,7 +1375,7 @@ export default function VacationTracker() {
         {!sortedTasks.length && <div className="text-center py-12" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
       </div>
       
-      <button onClick={() => handleOpenAddModal('task')} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center"><Plus className="w-6 h-6" /></button>
+      <button onClick={() => handleOpenAddModal('task')} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-30"><Plus className="w-6 h-6" /></button>
       
       <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} isDark={isDark} />
       <AddModal 
