@@ -875,7 +875,8 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
           {!editing && <button onClick={() => { setTitleValue(task.title); setDueDateValue(task.dueDate || ''); setEditing(true); }} style={{ color: textMuted }}><Pencil className="w-3.5 h-3.5" /></button>}
         </div>
       </div>
-      {(expanded || editing) && hasSubtasks && (
+      {/* Show subtasks section when: viewing with existing subtasks OR editing (to allow adding new subtasks) */}
+      {((expanded && hasSubtasks) || editing) && (
         <div className="px-3 py-2" style={{ backgroundColor: subtaskBg, borderTop: `1px solid ${cardBorder}` }}>
           {task.subtasks.map(st => (
             <div key={st.id} className="flex items-center gap-3 py-1.5">
@@ -890,7 +891,7 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
             </div>
           ))}
           {editing && (
-            <div className="flex items-center gap-2 pt-2 mt-2" style={{ borderTop: `1px solid ${cardBorder}` }}>
+            <div className={`flex items-center gap-2 ${hasSubtasks ? 'pt-2 mt-2' : ''}`} style={{ borderTop: hasSubtasks ? `1px solid ${cardBorder}` : 'none' }}>
               <Plus className="w-4 h-4" style={{ color: textMuted }} />
               <input type="text" value={newSubtask} onChange={(e) => setNewSubtask(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newSubtask.trim()) { onUpdate({ ...task, subtasks: [...task.subtasks, { id: `${task.id}-${Date.now()}`, title: newSubtask.trim(), status: STATUS.NOT_STARTED }] }); setNewSubtask(''); }}} placeholder="Add subtask..." className="flex-1 text-sm bg-transparent focus:outline-none" style={{ color: textPrimary }} />
             </div>
