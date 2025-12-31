@@ -847,10 +847,13 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={cancelPress}
-      className="p-1 cursor-grab active:cursor-grabbing touch-manipulation select-none"
-      style={{ color: isDragging ? '#3b82f6' : textMuted }}
+      className="p-2 cursor-grab active:cursor-grabbing select-none"
+      style={{ 
+        color: isDragging ? '#3b82f6' : textMuted,
+        touchAction: 'none' // Prevent browser scroll handling on this element
+      }}
     >
-      <GripVertical className="w-4 h-4" />
+      <GripVertical className="w-5 h-5" />
     </div>
   );
 }
@@ -1288,6 +1291,11 @@ export default function VacationTracker() {
   const handleDragMove = useCallback((e) => {
     if (!draggingId || !taskListRef.current) return;
     
+    // Prevent scrolling while dragging
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+    
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     dragCurrentY.current = clientY;
     
@@ -1339,14 +1347,19 @@ export default function VacationTracker() {
       
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleEnd);
-      document.addEventListener('touchmove', handleMove, { passive: true });
+      // Use passive: false to allow preventDefault() on touchmove
+      document.addEventListener('touchmove', handleMove, { passive: false });
       document.addEventListener('touchend', handleEnd);
+      
+      // Prevent body scroll while dragging
+      document.body.style.overflow = 'hidden';
       
       return () => {
         document.removeEventListener('mousemove', handleMove);
         document.removeEventListener('mouseup', handleEnd);
         document.removeEventListener('touchmove', handleMove);
         document.removeEventListener('touchend', handleEnd);
+        document.body.style.overflow = '';
       };
     }
   }, [draggingId, handleDragMove, handleDragEnd]);
