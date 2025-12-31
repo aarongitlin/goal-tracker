@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Pencil, Settings, Calendar, AlertCircle, Tag, Cloud, CloudOff, RefreshCw, MessageSquare, BookOpen, ChevronLeft } from 'lucide-react';
+import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, AlertCircle, Tag, Cloud, CloudOff, RefreshCw, MessageSquare, BookOpen, ChevronLeft, GripVertical } from 'lucide-react';
 
 const STATUS = {
   NOT_STARTED: 'not_started',
@@ -783,7 +783,79 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
   );
 }
 
-function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
+// Drag handle component
+function DragHandle({ isDark, onDragStart, isDragging }) {
+  const longPressRef = useRef(null);
+  const didLongPress = useRef(false);
+  const isTouch = useRef(false);
+  const LONG_PRESS_DURATION = 300;
+  
+  const textMuted = isDark ? '#6b7280' : '#9ca3af';
+  
+  const startPress = (e) => {
+    didLongPress.current = false;
+    longPressRef.current = setTimeout(() => {
+      didLongPress.current = true;
+      onDragStart?.(e);
+    }, LONG_PRESS_DURATION);
+  };
+  
+  const endPress = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  };
+  
+  const cancelPress = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  };
+  
+  const handleTouchStart = (e) => {
+    isTouch.current = true;
+    startPress(e);
+  };
+  
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    endPress();
+  };
+  
+  const handleMouseDown = (e) => {
+    if (isTouch.current) return;
+    startPress(e);
+  };
+  
+  const handleMouseUp = () => {
+    if (isTouch.current) return;
+    endPress();
+  };
+  
+  const handleMouseLeave = () => {
+    if (isTouch.current) return;
+    cancelPress();
+  };
+  
+  return (
+    <div
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={cancelPress}
+      className="p-1 cursor-grab active:cursor-grabbing touch-manipulation select-none"
+      style={{ color: isDragging ? '#3b82f6' : textMuted }}
+    >
+      <GripVertical className="w-4 h-4" />
+    </div>
+  );
+}
+
+function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes, onDragStart, isDragging, isDropTarget }) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [titleValue, setTitleValue] = useState(task.title);
@@ -821,6 +893,16 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
     }
   };
   
+  const handleCardClick = (e) => {
+    // Don't enter edit mode if we're already editing, dragging, or if click was on interactive elements
+    if (editing || isDragging) return;
+    // Check if click was on an interactive child (button, input, etc)
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('[data-drag-handle]')) return;
+    setTitleValue(task.title);
+    setDueDateValue(task.dueDate || '');
+    setEditing(true);
+  };
+  
   const completedSubtasks = task.subtasks.filter(st => st.status === STATUS.COMPLETE).length;
   const hasSubtasks = task.subtasks.length > 0;
   const noteCount = (task.notes || []).length;
@@ -833,9 +915,18 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
   const subtaskBg = isDark ? 'rgba(31,41,55,0.5)' : '#f9fafb';
   const inputBg = isDark ? '#111827' : '#f9fafb';
   
+  const dragStyle = isDragging 
+    ? { opacity: 0.5, transform: 'scale(1.02)', boxShadow: '0 8px 25px rgba(0,0,0,0.15)' }
+    : isDropTarget
+    ? { borderColor: '#3b82f6', borderWidth: '2px' }
+    : {};
+  
   return (
-    <div className={`rounded-xl shadow-sm overflow-hidden ${task.status === STATUS.COMPLETE ? 'opacity-50' : ''}`} style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}` }}>
-      <div className="px-3 py-2.5">
+    <div 
+      className={`rounded-xl shadow-sm overflow-hidden transition-all ${task.status === STATUS.COMPLETE ? 'opacity-50' : ''}`} 
+      style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, ...dragStyle }}
+    >
+      <div className="px-3 py-2.5" onClick={handleCardClick}>
         <div className="flex items-center gap-3">
           <StatusButton 
             status={task.status} 
@@ -845,7 +936,7 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
           />
           <div className="flex-1 min-w-0">
             {editing ? (
-              <div className="space-y-2">
+              <div className="space-y-2" onClick={e => e.stopPropagation()}>
                 <input type="text" value={titleValue} onChange={(e) => setTitleValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }} className="w-full text-sm font-medium px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: '1px solid #3b82f6', color: textPrimary }} autoFocus />
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" style={{ color: textMuted }} />
@@ -868,7 +959,7 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
                   <DateBadge dueDate={task.dueDate} status={task.status} isDark={isDark} />
                   {task.tags.map(tag => <TagBadge key={tag} tag={tag} isDark={isDark} />)}
                   {noteCount > 0 && (
-                    <button onClick={() => onOpenNotes(task)} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}>
+                    <button onClick={(e) => { e.stopPropagation(); onOpenNotes(task); }} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}>
                       <MessageSquare className="w-3 h-3" />
                       {noteCount}
                     </button>
@@ -876,7 +967,7 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
                   {hasSubtasks && (
                     <>
                       <span className="text-xs" style={{ color: textMuted }}>·</span>
-                      <button onClick={() => setExpanded(!expanded)} className="text-xs flex items-center gap-0.5" style={{ color: textSecondary }}>
+                      <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} className="text-xs flex items-center gap-0.5" style={{ color: textSecondary }}>
                         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                         {completedSubtasks}/{task.subtasks.length}
                       </button>
@@ -886,7 +977,11 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
               </>
             )}
           </div>
-          {!editing && <button onClick={() => { setTitleValue(task.title); setDueDateValue(task.dueDate || ''); setEditing(true); }} style={{ color: textMuted }}><Pencil className="w-3.5 h-3.5" /></button>}
+          {!editing && (
+            <div data-drag-handle onClick={e => e.stopPropagation()}>
+              <DragHandle isDark={isDark} onDragStart={() => onDragStart(task.id)} isDragging={isDragging} />
+            </div>
+          )}
         </div>
       </div>
       {/* Show subtasks section when: viewing with existing subtasks OR editing (to allow adding new subtasks) */}
@@ -1100,25 +1195,6 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
   );
 }
 
-function sortTasks(tasks) {
-  return [...tasks].sort((a, b) => {
-    if (a.status === STATUS.COMPLETE && b.status !== STATUS.COMPLETE) return 1;
-    if (b.status === STATUS.COMPLETE && a.status !== STATUS.COMPLETE) return -1;
-    const aToday = isToday(a.dueDate), bToday = isToday(b.dueDate);
-    const aOverdue = isOverdue(a.dueDate) && a.status !== STATUS.COMPLETE;
-    const bOverdue = isOverdue(b.dueDate) && b.status !== STATUS.COMPLETE;
-    if (aToday && !bToday) return -1;
-    if (bToday && !aToday) return 1;
-    if (aOverdue && !bOverdue) return -1;
-    if (bOverdue && !aOverdue) return 1;
-    if (aOverdue && bOverdue) return new Date(b.dueDate) - new Date(a.dueDate);
-    if (isUpcoming(a.dueDate) && !isUpcoming(b.dueDate)) return -1;
-    if (isUpcoming(b.dueDate) && !isUpcoming(a.dueDate)) return 1;
-    if (isUpcoming(a.dueDate) && isUpcoming(b.dueDate)) return new Date(a.dueDate) - new Date(b.dueDate);
-    return 0;
-  });
-}
-
 // API functions
 async function fetchFromAPI() {
   const response = await fetch('/api/tasks');
@@ -1152,6 +1228,13 @@ export default function VacationTracker() {
   const [syncStatus, setSyncStatus] = useState(SYNC_STATUS.SYNCED);
   const [isDark, setIsDark] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
+  
+  // Drag state
+  const [draggingId, setDraggingId] = useState(null);
+  const [dropTargetId, setDropTargetId] = useState(null);
+  const dragStartY = useRef(0);
+  const dragCurrentY = useRef(0);
+  const taskListRef = useRef(null);
   
   const allTags = [...new Set(tasks.flatMap(t => t.tags))];
   const taskNotesCount = tasks.reduce((sum, t) => sum + (t.notes || []).length, 0);
@@ -1192,6 +1275,81 @@ export default function VacationTracker() {
       setSyncStatus(SYNC_STATUS.ERROR);
     }
   }, []);
+  
+  // Drag handlers
+  const handleDragStart = useCallback((taskId) => {
+    setDraggingId(taskId);
+    // Add haptic feedback if available
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  }, []);
+  
+  const handleDragMove = useCallback((e) => {
+    if (!draggingId || !taskListRef.current) return;
+    
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragCurrentY.current = clientY;
+    
+    // Find which task we're hovering over
+    const taskElements = taskListRef.current.querySelectorAll('[data-task-id]');
+    for (const el of taskElements) {
+      const rect = el.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      if (clientY < midY) {
+        const targetId = el.getAttribute('data-task-id');
+        if (targetId !== draggingId) {
+          setDropTargetId(targetId);
+        }
+        return;
+      }
+    }
+    // If we're past all items, target the last one
+    if (taskElements.length > 0) {
+      const lastId = taskElements[taskElements.length - 1].getAttribute('data-task-id');
+      if (lastId !== draggingId) {
+        setDropTargetId(lastId);
+      }
+    }
+  }, [draggingId]);
+  
+  const handleDragEnd = useCallback(() => {
+    if (draggingId && dropTargetId && draggingId !== dropTargetId) {
+      setTasks(prevTasks => {
+        const newTasks = [...prevTasks];
+        const dragIndex = newTasks.findIndex(t => t.id === draggingId);
+        const dropIndex = newTasks.findIndex(t => t.id === dropTargetId);
+        
+        if (dragIndex !== -1 && dropIndex !== -1) {
+          const [draggedTask] = newTasks.splice(dragIndex, 1);
+          newTasks.splice(dropIndex, 0, draggedTask);
+        }
+        return newTasks;
+      });
+    }
+    setDraggingId(null);
+    setDropTargetId(null);
+  }, [draggingId, dropTargetId]);
+  
+  // Add global event listeners for drag
+  useEffect(() => {
+    if (draggingId) {
+      const handleMove = (e) => handleDragMove(e);
+      const handleEnd = () => handleDragEnd();
+      
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchmove', handleMove, { passive: true });
+      document.addEventListener('touchend', handleEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchmove', handleMove);
+        document.removeEventListener('touchend', handleEnd);
+      };
+    }
+  }, [draggingId, handleDragMove, handleDragEnd]);
   
   useEffect(() => {
     if (allTags.length > 0 && selectedTags.length === 0) setSelectedTags([...allTags]);
@@ -1312,6 +1470,7 @@ export default function VacationTracker() {
     setStandaloneNotes([...standaloneNotes, note]);
   };
   
+  // Filter tasks but preserve manual order when showing all
   let filteredTasks = tasks;
   if (filterDate !== DATE_FILTERS.ALL) {
     filteredTasks = filteredTasks.filter(t => {
@@ -1325,7 +1484,12 @@ export default function VacationTracker() {
   if (selectedTags.length < allTags.length && selectedTags.length > 0) {
     filteredTasks = filteredTasks.filter(t => t.tags.some(tag => selectedTags.includes(tag)) || !t.tags.length);
   }
-  const sortedTasks = sortTasks(filteredTasks);
+  
+  // Don't auto-sort when showing all - preserve manual order
+  // Only sort when filtering
+  const displayTasks = filterDate === DATE_FILTERS.ALL && selectedTags.length === allTags.length
+    ? filteredTasks
+    : filteredTasks;
   
   const todayCount = tasks.filter(t => isToday(t.dueDate) && t.status !== STATUS.COMPLETE).length;
   const overdueCount = tasks.filter(t => isOverdue(t.dueDate) && t.status !== STATUS.COMPLETE).length;
@@ -1407,9 +1571,22 @@ export default function VacationTracker() {
         </div>
       </div>
       
-      <div className="px-4 mt-4 pb-24 space-y-2">
-        {sortedTasks.map(task => <TaskItem key={task.id} task={task} onUpdate={handleUpdateTask} allTags={allTags} isDark={isDark} onOpenNotes={setNotesTask} />)}
-        {!sortedTasks.length && <div className="text-center py-12" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
+      <div className="px-4 mt-4 pb-24 space-y-2" ref={taskListRef}>
+        {displayTasks.map(task => (
+          <div key={task.id} data-task-id={task.id}>
+            <TaskItem 
+              task={task} 
+              onUpdate={handleUpdateTask} 
+              allTags={allTags} 
+              isDark={isDark} 
+              onOpenNotes={setNotesTask}
+              onDragStart={handleDragStart}
+              isDragging={draggingId === task.id}
+              isDropTarget={dropTargetId === task.id}
+            />
+          </div>
+        ))}
+        {!displayTasks.length && <div className="text-center py-12" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
       </div>
       
       <button onClick={() => handleOpenAddModal('task')} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-30"><Plus className="w-6 h-6" /></button>
