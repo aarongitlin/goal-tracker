@@ -788,11 +788,33 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
   const longPressRef = useRef(null);
   const didLongPress = useRef(false);
   const isTouch = useRef(false);
+  const isPressing = useRef(false);
+  const handleRef = useRef(null);
   const LONG_PRESS_DURATION = 300;
   
   const textMuted = isDark ? '#6b7280' : '#9ca3af';
   
+  // Prevent scrolling while touching the drag handle
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle) return;
+    
+    const preventScroll = (e) => {
+      if (isPressing.current) {
+        e.preventDefault();
+      }
+    };
+    
+    // Must use passive: false to allow preventDefault
+    handle.addEventListener('touchmove', preventScroll, { passive: false });
+    
+    return () => {
+      handle.removeEventListener('touchmove', preventScroll);
+    };
+  }, []);
+  
   const startPress = (e) => {
+    isPressing.current = true;
     didLongPress.current = false;
     longPressRef.current = setTimeout(() => {
       didLongPress.current = true;
@@ -801,6 +823,7 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
   };
   
   const endPress = () => {
+    isPressing.current = false;
     if (longPressRef.current) {
       clearTimeout(longPressRef.current);
       longPressRef.current = null;
@@ -808,6 +831,7 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
   };
   
   const cancelPress = () => {
+    isPressing.current = false;
     if (longPressRef.current) {
       clearTimeout(longPressRef.current);
       longPressRef.current = null;
@@ -841,6 +865,7 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
   
   return (
     <div
+      ref={handleRef}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
@@ -850,7 +875,7 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
       className="p-2 cursor-grab active:cursor-grabbing select-none"
       style={{ 
         color: isDragging ? '#3b82f6' : textMuted,
-        touchAction: 'none' // Prevent browser scroll handling on this element
+        touchAction: 'none'
       }}
     >
       <GripVertical className="w-5 h-5" />
