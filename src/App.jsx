@@ -807,6 +807,20 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
     setEditing(false);
   };
   
+  const handleAddSubtask = () => {
+    if (newSubtask.trim()) {
+      onUpdate({ 
+        ...task, 
+        subtasks: [...task.subtasks, { 
+          id: `${task.id}-${Date.now()}`, 
+          title: newSubtask.trim(), 
+          status: STATUS.NOT_STARTED 
+        }] 
+      });
+      setNewSubtask('');
+    }
+  };
+  
   const completedSubtasks = task.subtasks.filter(st => st.status === STATUS.COMPLETE).length;
   const hasSubtasks = task.subtasks.length > 0;
   const noteCount = (task.notes || []).length;
@@ -892,8 +906,30 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes }) {
           ))}
           {editing && (
             <div className={`flex items-center gap-2 ${hasSubtasks ? 'pt-2 mt-2' : ''}`} style={{ borderTop: hasSubtasks ? `1px solid ${cardBorder}` : 'none' }}>
-              <Plus className="w-4 h-4" style={{ color: textMuted }} />
-              <input type="text" value={newSubtask} onChange={(e) => setNewSubtask(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newSubtask.trim()) { onUpdate({ ...task, subtasks: [...task.subtasks, { id: `${task.id}-${Date.now()}`, title: newSubtask.trim(), status: STATUS.NOT_STARTED }] }); setNewSubtask(''); }}} placeholder="Add subtask..." className="flex-1 text-sm bg-transparent focus:outline-none" style={{ color: textPrimary }} />
+              <button 
+                type="button"
+                onClick={handleAddSubtask}
+                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ 
+                  backgroundColor: newSubtask.trim() ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb'),
+                  color: newSubtask.trim() ? 'white' : textMuted
+                }}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <input 
+                type="text" 
+                value={newSubtask} 
+                onChange={(e) => setNewSubtask(e.target.value)} 
+                onKeyDown={(e) => { 
+                  if (e.key === 'Enter' && newSubtask.trim()) { 
+                    handleAddSubtask();
+                  }
+                }} 
+                placeholder="Add subtask..." 
+                className="flex-1 text-sm bg-transparent focus:outline-none" 
+                style={{ color: textPrimary }} 
+              />
             </div>
           )}
         </div>
