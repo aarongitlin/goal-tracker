@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, AlertCircle, Tag, Cloud, CloudOff, RefreshCw, MessageSquare, BookOpen, ChevronLeft, GripVertical } from 'lucide-react';
+import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, Cloud, CloudOff, RefreshCw, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp } from 'lucide-react';
 
 const STATUS = {
   NOT_STARTED: 'not_started',
@@ -11,10 +11,7 @@ const DEFAULT_TAGS = ['Learning', 'Health', 'Projects', 'Work', 'Personal', 'Pla
 
 const DATE_FILTERS = {
   ALL: 'all',
-  TODAY: 'today',
-  OVERDUE: 'overdue',
-  UPCOMING: 'upcoming',
-  NO_DATE: 'no_date'
+  TODAY: 'today'
 };
 
 const SYNC_STATUS = {
@@ -56,32 +53,9 @@ function formatNoteDateFull(dateStr) {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function formatNoteTime(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-}
-
 function isToday(dateStr) {
   if (!dateStr) return false;
   return new Date(dateStr).toDateString() === new Date().toDateString();
-}
-
-function isOverdue(dateStr) {
-  if (!dateStr) return false;
-  const date = new Date(dateStr);
-  const today = new Date();
-  date.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  return date < today;
-}
-
-function isUpcoming(dateStr) {
-  if (!dateStr) return false;
-  const date = new Date(dateStr);
-  const today = new Date();
-  date.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  return date > today;
 }
 
 function getTimeGradient(hour) {
@@ -94,6 +68,14 @@ function getTimeGradient(hour) {
   if (h >= 16 && h < 18) return { gradient: `radial-gradient(ellipse at 30% 20%, rgba(251, 146, 60, 0.5) 0%, transparent 40%), linear-gradient(to bottom, #fb923c 0%, #f97316 25%, #f43f5e 60%, #be185d 100%)`, darkText: false };
   if (h >= 18 && h < 20) return { gradient: `radial-gradient(ellipse at 60% 20%, rgba(192, 132, 252, 0.4) 0%, transparent 40%), linear-gradient(to bottom, #a855f7 0%, #7c3aed 30%, #6d28d9 60%, #4c1d95 100%)`, darkText: false };
   return { gradient: `radial-gradient(ellipse at 40% 30%, rgba(124, 58, 237, 0.3) 0%, transparent 40%), linear-gradient(to bottom, #581c87 0%, #4c1d95 30%, #312e81 70%, #1e293b 100%)`, darkText: false };
+}
+
+// Celebration gradient for milestone complete
+function getMilestoneCompleteGradient() {
+  return {
+    gradient: `radial-gradient(ellipse at 30% 20%, rgba(74, 222, 128, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(59, 130, 246, 0.4) 0%, transparent 50%), linear-gradient(135deg, #065f46 0%, #047857 25%, #0d9488 50%, #0891b2 75%, #0284c7 100%)`,
+    darkText: false
+  };
 }
 
 // Debounce hook for saving
@@ -257,10 +239,11 @@ const INITIAL_TASKS = [
 const LOCAL_STORAGE_KEY = 'vacation-tracker-data';
 const LOCAL_GOAL_KEY = 'vacation-tracker-goal';
 const LOCAL_NOTES_KEY = 'vacation-tracker-notes';
+const LOCAL_SUMMARY_KEY = 'vacation-tracker-summary';
 const DEFAULT_GOAL = { title: 'Vacation Goals', startDate: '2025-12-21', endDate: '2026-01-07' };
 
-function CircularCountdown({ daysLeft, totalDays, size = 48, darkText = false }) {
-  const progress = totalDays > 0 ? Math.max(0, Math.min(1, 1 - (daysLeft / totalDays))) : 0;
+function CircularCountdown({ daysLeft, totalDays, size = 48, darkText = false, isComplete = false }) {
+  const progress = totalDays > 0 ? Math.max(0, Math.min(1, 1 - (daysLeft / totalDays))) : 1;
   const strokeWidth = 3;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -275,7 +258,9 @@ function CircularCountdown({ daysLeft, totalDays, size = 48, darkText = false })
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="font-bold text-xs" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>{daysLeft > 0 ? `${daysLeft}d` : '🎉'}</span>
+        <span className="font-bold text-xs" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>
+          {isComplete ? '🎉' : daysLeft > 0 ? `${daysLeft}d` : '🎉'}
+        </span>
       </div>
     </div>
   );
@@ -366,18 +351,16 @@ function StatusButton({ status, onTap, onLongPress, size = 'normal', isDark }) {
     }
   };
   
-  // Touch handlers
   const handleTouchStart = () => {
     isTouch.current = true;
     startPress();
   };
   
   const handleTouchEnd = (e) => {
-    e.preventDefault(); // Prevent synthetic click event
+    e.preventDefault();
     endPress();
   };
   
-  // Mouse handlers - only fire if not a touch device
   const handleMouseDown = () => {
     if (isTouch.current) return;
     startPress();
@@ -424,15 +407,168 @@ function TagBadge({ tag, isDark }) {
   return <span className="px-1.5 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: c.bg, color: c.text }}>{tag}</span>;
 }
 
-function DateBadge({ dueDate, status, isDark }) {
+function DateBadge({ dueDate, isDark }) {
   if (!dueDate) return null;
-  const taskOverdue = isOverdue(dueDate) && status !== STATUS.COMPLETE;
   const taskToday = isToday(dueDate);
   let bg, text;
-  if (taskOverdue) { bg = isDark ? 'rgba(239,68,68,0.2)' : '#fee2e2'; text = isDark ? '#fca5a5' : '#dc2626'; }
-  else if (taskToday) { bg = isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe'; text = isDark ? '#93c5fd' : '#2563eb'; }
+  if (taskToday) { bg = isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe'; text = isDark ? '#93c5fd' : '#2563eb'; }
   else { bg = isDark ? '#374151' : '#f3f4f6'; text = isDark ? '#9ca3af' : '#6b7280'; }
-  return <span className="px-1.5 py-0.5 rounded text-xs font-medium flex items-center gap-1" style={{ backgroundColor: bg, color: text }}>{taskOverdue && <AlertCircle className="w-3 h-3" />}<Calendar className="w-3 h-3" />{formatDateShort(dueDate)}</span>;
+  return <span className="px-1.5 py-0.5 rounded text-xs font-medium flex items-center gap-1" style={{ backgroundColor: bg, color: text }}><Calendar className="w-3 h-3" />{formatDateShort(dueDate)}</span>;
+}
+
+// AI Summary Component
+function MilestoneSummary({ tasks, standaloneNotes, goal, isDark, savedSummary, onSaveSummary }) {
+  const [summary, setSummary] = useState(savedSummary || '');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(!!savedSummary);
+  const [error, setError] = useState(null);
+  
+  const cardBg = isDark ? '#1f2937' : '#ffffff';
+  const textPrimary = isDark ? '#f3f4f6' : '#111827';
+  const textSecondary = isDark ? '#9ca3af' : '#6b7280';
+  const borderColor = isDark ? '#374151' : '#e5e7eb';
+  
+  const generateSummary = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    // Prepare the data for the AI
+    const completedTasks = tasks.filter(t => t.status === STATUS.COMPLETE);
+    const inProgressTasks = tasks.filter(t => t.status === STATUS.IN_PROGRESS);
+    const notStartedTasks = tasks.filter(t => t.status === STATUS.NOT_STARTED);
+    
+    // Gather all notes
+    const taskNotes = tasks.flatMap(task => 
+      (task.notes || []).map(note => ({
+        content: note.content,
+        date: note.date,
+        taskTitle: task.title
+      }))
+    );
+    
+    const allNotes = [
+      ...taskNotes,
+      ...standaloneNotes.map(n => ({ content: n.content, date: n.date, taskTitle: null }))
+    ].sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Calculate stats
+    const allItems = tasks.flatMap(t => [t, ...t.subtasks]);
+    const completedItems = allItems.filter(i => i.status === STATUS.COMPLETE).length;
+    const completionRate = allItems.length > 0 ? Math.round((completedItems / allItems.length) * 100) : 0;
+    
+    const prompt = `You are helping someone reflect on their goal-tracking milestone. Here's their data:
+
+**Goal:** ${goal.title}
+**Period:** ${new Date(goal.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to ${new Date(goal.endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+**Overall Completion:** ${completionRate}% (${completedItems}/${allItems.length} items)
+
+**Completed Tasks (${completedTasks.length}):**
+${completedTasks.map(t => `- ${t.title}${t.subtasks.length > 0 ? ` (${t.subtasks.filter(s => s.status === STATUS.COMPLETE).length}/${t.subtasks.length} subtasks)` : ''}`).join('\n') || '(none)'}
+
+**In Progress (${inProgressTasks.length}):**
+${inProgressTasks.map(t => `- ${t.title}`).join('\n') || '(none)'}
+
+**Not Started (${notStartedTasks.length}):**
+${notStartedTasks.map(t => `- ${t.title}`).join('\n') || '(none)'}
+
+**Journal Notes (${allNotes.length} entries):**
+${allNotes.slice(0, 15).map(n => `- [${n.date}]${n.taskTitle ? ` (${n.taskTitle})` : ''}: "${n.content}"`).join('\n') || '(no notes)'}
+${allNotes.length > 15 ? `\n... and ${allNotes.length - 15} more notes` : ''}
+
+Please write a warm, reflective summary (3-4 paragraphs) that:
+1. Celebrates what was accomplished
+2. Notes any patterns or themes from the notes and tasks
+3. Gently acknowledges what didn't get done without being critical
+4. Offers an encouraging perspective on the journey
+
+Keep the tone personal, warm, and supportive—like a thoughtful friend helping them reflect. Don't use bullet points. Don't start with "Great job!" or similar. Be genuine and specific to their actual accomplishments.`;
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [
+            { role: "user", content: prompt }
+          ],
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.content && data.content[0] && data.content[0].text) {
+        const summaryText = data.content[0].text;
+        setSummary(summaryText);
+        onSaveSummary(summaryText);
+        setIsExpanded(true);
+      } else {
+        throw new Error('Unexpected response format');
+      }
+    } catch (err) {
+      console.error('Error generating summary:', err);
+      setError('Unable to generate summary. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+      <button 
+        onClick={() => summary ? setIsExpanded(!isExpanded) : generateSummary()}
+        className="w-full p-4 flex items-center justify-between"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div className="text-left">
+            <h3 className="font-semibold" style={{ color: textPrimary }}>AI Reflection</h3>
+            <p className="text-sm" style={{ color: textSecondary }}>
+              {summary ? 'Your milestone summary' : 'Generate a summary of your journey'}
+            </p>
+          </div>
+        </div>
+        {isLoading ? (
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: textSecondary }} />
+        ) : summary ? (
+          isExpanded ? <ChevronUp className="w-5 h-5" style={{ color: textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: textSecondary }} />
+        ) : (
+          <ChevronRight className="w-5 h-5" style={{ color: textSecondary }} />
+        )}
+      </button>
+      
+      {isExpanded && summary && (
+        <div className="px-4 pb-4">
+          <div 
+            className="p-4 rounded-lg text-sm leading-relaxed whitespace-pre-wrap" 
+            style={{ backgroundColor: isDark ? '#111827' : '#f9fafb', color: textPrimary }}
+          >
+            {summary}
+          </div>
+          <button 
+            onClick={generateSummary}
+            disabled={isLoading}
+            className="mt-3 text-sm font-medium flex items-center gap-1"
+            style={{ color: '#3b82f6' }}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Regenerate
+          </button>
+        </div>
+      )}
+      
+      {error && (
+        <div className="px-4 pb-4">
+          <p className="text-sm text-red-500">{error}</p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Notes Modal for individual task
@@ -883,7 +1019,7 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
   );
 }
 
-function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes, onDragStart, isDragging, isDropTarget }) {
+function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes, onDragStart, isDragging, isDropTarget, isMilestoneComplete }) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [titleValue, setTitleValue] = useState(task.title);
@@ -966,11 +1102,13 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes, onDragStart, i
             {editing ? (
               <div className="space-y-2" onClick={e => e.stopPropagation()}>
                 <input type="text" value={titleValue} onChange={(e) => setTitleValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }} className="w-full text-sm font-medium px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: '1px solid #3b82f6', color: textPrimary }} autoFocus />
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" style={{ color: textMuted }} />
-                  <input type="date" value={dueDateValue} onChange={(e) => setDueDateValue(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, color: textPrimary }} />
-                  {dueDateValue && <button onClick={() => setDueDateValue('')} style={{ color: textMuted }}><X className="w-3 h-3" /></button>}
-                </div>
+                {!isMilestoneComplete && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" style={{ color: textMuted }} />
+                    <input type="date" value={dueDateValue} onChange={(e) => setDueDateValue(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, color: textPrimary }} />
+                    {dueDateValue && <button onClick={() => setDueDateValue('')} style={{ color: textMuted }}><X className="w-3 h-3" /></button>}
+                  </div>
+                )}
                 <TagEditor selectedTags={task.tags} onTagsChange={(tags) => onUpdate({ ...task, tags })} allTags={allTags} isDark={isDark} />
                 <div className="flex items-center gap-3">
                   <button onClick={handleSave} className="text-sm text-blue-500 font-medium">Done</button>
@@ -984,7 +1122,7 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes, onDragStart, i
               <>
                 <p className={`text-sm font-medium leading-snug ${task.status === STATUS.COMPLETE ? 'line-through' : ''}`} style={{ color: task.status === STATUS.COMPLETE ? textSecondary : textPrimary }}>{task.title}</p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <DateBadge dueDate={task.dueDate} status={task.status} isDark={isDark} />
+                  {!isMilestoneComplete && <DateBadge dueDate={task.dueDate} isDark={isDark} />}
                   {task.tags.map(tag => <TagBadge key={tag} tag={tag} isDark={isDark} />)}
                   {noteCount > 0 && (
                     <button onClick={(e) => { e.stopPropagation(); onOpenNotes(task); }} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}>
@@ -1256,6 +1394,7 @@ export default function VacationTracker() {
   const [syncStatus, setSyncStatus] = useState(SYNC_STATUS.SYNCED);
   const [isDark, setIsDark] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
+  const [savedSummary, setSavedSummary] = useState('');
   
   // Drag state
   const [draggingId, setDraggingId] = useState(null);
@@ -1267,6 +1406,14 @@ export default function VacationTracker() {
   const allTags = [...new Set(tasks.flatMap(t => t.tags))];
   const taskNotesCount = tasks.reduce((sum, t) => sum + (t.notes || []).length, 0);
   const totalNotes = taskNotesCount + standaloneNotes.length;
+  
+  // Calculate milestone status
+  const today = new Date(); today.setHours(0,0,0,0);
+  const startDate = new Date(goal.startDate); startDate.setHours(0,0,0,0);
+  const endDate = new Date(goal.endDate); endDate.setHours(0,0,0,0);
+  const totalDays = Math.ceil((endDate - startDate) / 86400000);
+  const daysLeft = Math.ceil((endDate - today) / 86400000);
+  const isMilestoneComplete = today > endDate;
   
   // Debounced save to API
   const debouncedSave = useDebounce(async (tasksToSave, goalToSave, notesToSave) => {
@@ -1307,7 +1454,6 @@ export default function VacationTracker() {
   // Drag handlers
   const handleDragStart = useCallback((taskId) => {
     setDraggingId(taskId);
-    // Add haptic feedback if available
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
@@ -1316,7 +1462,6 @@ export default function VacationTracker() {
   const handleDragMove = useCallback((e) => {
     if (!draggingId || !taskListRef.current) return;
     
-    // Prevent scrolling while dragging
     if (e.cancelable) {
       e.preventDefault();
     }
@@ -1324,7 +1469,6 @@ export default function VacationTracker() {
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     dragCurrentY.current = clientY;
     
-    // Find which task we're hovering over
     const taskElements = taskListRef.current.querySelectorAll('[data-task-id]');
     for (const el of taskElements) {
       const rect = el.getBoundingClientRect();
@@ -1337,7 +1481,6 @@ export default function VacationTracker() {
         return;
       }
     }
-    // If we're past all items, target the last one
     if (taskElements.length > 0) {
       const lastId = taskElements[taskElements.length - 1].getAttribute('data-task-id');
       if (lastId !== draggingId) {
@@ -1372,11 +1515,9 @@ export default function VacationTracker() {
       
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleEnd);
-      // Use passive: false to allow preventDefault() on touchmove
       document.addEventListener('touchmove', handleMove, { passive: false });
       document.addEventListener('touchend', handleEnd);
       
-      // Prevent body scroll while dragging
       document.body.style.overflow = 'hidden';
       
       return () => {
@@ -1408,15 +1549,12 @@ export default function VacationTracker() {
     return () => clearInterval(i);
   }, []);
   
-  const { gradient, darkText } = getTimeGradient(currentHour);
+  // Get gradient based on milestone status
+  const { gradient, darkText } = isMilestoneComplete 
+    ? getMilestoneCompleteGradient() 
+    : getTimeGradient(currentHour);
   const greeting = getGreeting(Math.floor(currentHour));
   const todayFormatted = formatToday();
-  
-  const today = new Date(); today.setHours(0,0,0,0);
-  const startDate = new Date(goal.startDate); startDate.setHours(0,0,0,0);
-  const endDate = new Date(goal.endDate); endDate.setHours(0,0,0,0);
-  const totalDays = Math.ceil((endDate - startDate) / 86400000);
-  const daysLeft = Math.ceil((endDate - today) / 86400000);
   
   // Initial load: try API first, fall back to localStorage
   useEffect(() => {
@@ -1424,17 +1562,14 @@ export default function VacationTracker() {
       try {
         const data = await fetchFromAPI();
         if (data.tasks) {
-          // Ensure notes array exists on all tasks
           const tasksWithNotes = data.tasks.map(t => ({ ...t, notes: t.notes || [] }));
           setTasks(tasksWithNotes);
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasksWithNotes));
         } else {
-          // No remote data, try localStorage or use initial
           const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
           const localTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
           const tasksWithNotes = localTasks.map(t => ({ ...t, notes: t.notes || [] }));
           setTasks(tasksWithNotes);
-          // Push local data to remote
           const savedNotes = localStorage.getItem(LOCAL_NOTES_KEY);
           const localNotes = savedNotes ? JSON.parse(savedNotes) : [];
           await saveToAPI(tasksWithNotes, data.goal || DEFAULT_GOAL, localNotes);
@@ -1453,7 +1588,6 @@ export default function VacationTracker() {
         setSyncStatus(SYNC_STATUS.SYNCED);
       } catch (error) {
         console.error('Initial load error:', error);
-        // Offline: load from localStorage
         setSyncStatus(SYNC_STATUS.OFFLINE);
         const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
         const localTasks = saved ? JSON.parse(saved) : INITIAL_TASKS;
@@ -1463,6 +1597,9 @@ export default function VacationTracker() {
         const savedNotes = localStorage.getItem(LOCAL_NOTES_KEY);
         if (savedNotes) setStandaloneNotes(JSON.parse(savedNotes));
       }
+      // Load saved summary
+      const savedSum = localStorage.getItem(LOCAL_SUMMARY_KEY);
+      if (savedSum) setSavedSummary(savedSum);
       setLoading(false);
     }
     loadData();
@@ -1491,9 +1628,13 @@ export default function VacationTracker() {
     debouncedSave(tasks, newGoal, standaloneNotes);
   };
   
+  const handleSaveSummary = (summary) => {
+    setSavedSummary(summary);
+    localStorage.setItem(LOCAL_SUMMARY_KEY, summary);
+  };
+  
   const handleUpdateTask = (updatedTask) => {
     setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
-    // Update notesTask if it's the same task
     if (notesTask && notesTask.id === updatedTask.id) {
       setNotesTask(updatedTask);
     }
@@ -1508,29 +1649,18 @@ export default function VacationTracker() {
     setStandaloneNotes([...standaloneNotes, note]);
   };
   
-  // Filter tasks but preserve manual order when showing all
+  // Filter tasks
   let filteredTasks = tasks;
-  if (filterDate !== DATE_FILTERS.ALL) {
-    filteredTasks = filteredTasks.filter(t => {
-      if (filterDate === DATE_FILTERS.TODAY) return isToday(t.dueDate);
-      if (filterDate === DATE_FILTERS.OVERDUE) return isOverdue(t.dueDate) && t.status !== STATUS.COMPLETE;
-      if (filterDate === DATE_FILTERS.UPCOMING) return isUpcoming(t.dueDate);
-      if (filterDate === DATE_FILTERS.NO_DATE) return !t.dueDate;
-      return true;
-    });
+  if (filterDate === DATE_FILTERS.TODAY) {
+    filteredTasks = filteredTasks.filter(t => isToday(t.dueDate));
   }
   if (selectedTags.length < allTags.length && selectedTags.length > 0) {
     filteredTasks = filteredTasks.filter(t => t.tags.some(tag => selectedTags.includes(tag)) || !t.tags.length);
   }
   
-  // Don't auto-sort when showing all - preserve manual order
-  // Only sort when filtering
-  const displayTasks = filterDate === DATE_FILTERS.ALL && selectedTags.length === allTags.length
-    ? filteredTasks
-    : filteredTasks;
+  const displayTasks = filteredTasks;
   
   const todayCount = tasks.filter(t => isToday(t.dueDate) && t.status !== STATUS.COMPLETE).length;
-  const overdueCount = tasks.filter(t => isOverdue(t.dueDate) && t.status !== STATUS.COMPLETE).length;
   const allItems = tasks.flatMap(t => [t, ...t.subtasks]);
   const completedItems = allItems.filter(i => i.status === STATUS.COMPLETE).length;
   const isTagFiltering = selectedTags.length < allTags.length && selectedTags.length > 0;
@@ -1564,14 +1694,25 @@ export default function VacationTracker() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{greeting}</p>
+              {isMilestoneComplete ? (
+                <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.9)' }}>🎉 Milestone complete</p>
+              ) : (
+                <p className="text-sm font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{greeting}</p>
+              )}
               <SyncIndicator status={syncStatus} onRefresh={handleRefresh} isDark={!darkText} />
             </div>
-            <h1 className="text-2xl font-bold mt-0.5" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>{todayFormatted}</h1>
-            <p className="text-sm mt-1" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{goal.title} · {new Date(goal.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – {new Date(goal.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</p>
+            <h1 className="text-2xl font-bold mt-0.5" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>
+              {isMilestoneComplete ? goal.title : todayFormatted}
+            </h1>
+            <p className="text-sm mt-1" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>
+              {isMilestoneComplete 
+                ? `${new Date(goal.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${new Date(goal.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · Finished!`
+                : `${goal.title} · ${new Date(goal.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${new Date(goal.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`
+              }
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <CircularCountdown daysLeft={daysLeft} totalDays={totalDays} darkText={darkText} />
+            <CircularCountdown daysLeft={daysLeft} totalDays={totalDays} darkText={darkText} isComplete={isMilestoneComplete} />
             <button onClick={() => setShowJournal(true)} className="relative" style={{ color: darkText ? 'rgba(0,0,0,0.7)' : 'white' }}>
               <BookOpen className="w-5 h-5" />
               {totalNotes > 0 && (
@@ -1585,7 +1726,9 @@ export default function VacationTracker() {
         </div>
         <div className="mt-5">
           <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>Overall Progress</span>
+            <span className="font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>
+              {isMilestoneComplete ? 'Final Progress' : 'Overall Progress'}
+            </span>
             <span style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{completedItems}/{allItems.length}</span>
           </div>
           <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: darkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)' }}>
@@ -1594,14 +1737,54 @@ export default function VacationTracker() {
         </div>
       </div>
       
+      {/* AI Summary for milestone complete */}
+      {isMilestoneComplete && (
+        <div className="px-4 mt-4">
+          <MilestoneSummary 
+            tasks={tasks} 
+            standaloneNotes={standaloneNotes} 
+            goal={goal} 
+            isDark={isDark}
+            savedSummary={savedSummary}
+            onSaveSummary={handleSaveSummary}
+          />
+        </div>
+      )}
+      
+      {/* Filters - simplified when milestone is complete */}
       <div className="px-4 mt-4">
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-          {[['All', DATE_FILTERS.ALL], ['Today', DATE_FILTERS.TODAY, todayCount, '#3b82f6'], ['Overdue', DATE_FILTERS.OVERDUE, overdueCount, '#ef4444'], ['Upcoming', DATE_FILTERS.UPCOMING], ['No Date', DATE_FILTERS.NO_DATE]].map(([label, filter, count, badgeColor]) => (
-            <button key={filter} onClick={() => setFilterDate(filter)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5" style={{ backgroundColor: filterDate === filter ? filterActiveBg : filterBg, color: filterDate === filter ? filterActiveText : filterText }}>
-              {label}
-              {count > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ backgroundColor: filterDate === filter ? (isDark ? '#374151' : '#e5e7eb') : badgeColor, color: filterDate === filter ? filterText : 'white' }}>{count}</span>}
-            </button>
-          ))}
+          {isMilestoneComplete ? (
+            // Simplified filters for milestone complete
+            <>
+              <button 
+                onClick={() => setFilterDate(DATE_FILTERS.ALL)} 
+                className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap" 
+                style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? filterActiveBg : filterBg, color: filterDate === DATE_FILTERS.ALL ? filterActiveText : filterText }}
+              >
+                All Tasks
+              </button>
+            </>
+          ) : (
+            // Normal filters
+            <>
+              <button 
+                onClick={() => setFilterDate(DATE_FILTERS.ALL)} 
+                className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap" 
+                style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? filterActiveBg : filterBg, color: filterDate === DATE_FILTERS.ALL ? filterActiveText : filterText }}
+              >
+                All
+              </button>
+              <button 
+                onClick={() => setFilterDate(DATE_FILTERS.TODAY)} 
+                className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5" 
+                style={{ backgroundColor: filterDate === DATE_FILTERS.TODAY ? filterActiveBg : filterBg, color: filterDate === DATE_FILTERS.TODAY ? filterActiveText : filterText }}
+              >
+                Today
+                {todayCount > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ backgroundColor: filterDate === DATE_FILTERS.TODAY ? (isDark ? '#374151' : '#e5e7eb') : '#3b82f6', color: filterDate === DATE_FILTERS.TODAY ? filterText : 'white' }}>{todayCount}</span>}
+              </button>
+            </>
+          )}
           <button onClick={() => setShowTagsModal(true)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5" style={{ backgroundColor: isTagFiltering ? filterActiveBg : filterBg, color: isTagFiltering ? filterActiveText : filterText }}>
             <Tag className="w-3.5 h-3.5" />Tags
             {isTagFiltering && <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: filterText }}>{selectedTags.length}</span>}
@@ -1621,6 +1804,7 @@ export default function VacationTracker() {
               onDragStart={handleDragStart}
               isDragging={draggingId === task.id}
               isDropTarget={dropTargetId === task.id}
+              isMilestoneComplete={isMilestoneComplete}
             />
           </div>
         ))}
