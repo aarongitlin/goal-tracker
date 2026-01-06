@@ -431,80 +431,28 @@ function MilestoneSummary({ tasks, standaloneNotes, goal, isDark, savedSummary, 
   const generateSummary = async () => {
     setIsLoading(true);
     setError(null);
-    
-    // Prepare the data for the AI
-    const completedTasks = tasks.filter(t => t.status === STATUS.COMPLETE);
-    const inProgressTasks = tasks.filter(t => t.status === STATUS.IN_PROGRESS);
-    const notStartedTasks = tasks.filter(t => t.status === STATUS.NOT_STARTED);
-    
-    // Gather all notes
-    const taskNotes = tasks.flatMap(task => 
-      (task.notes || []).map(note => ({
-        content: note.content,
-        date: note.date,
-        taskTitle: task.title
-      }))
-    );
-    
-    const allNotes = [
-      ...taskNotes,
-      ...standaloneNotes.map(n => ({ content: n.content, date: n.date, taskTitle: null }))
-    ].sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    // Calculate stats
-    const allItems = tasks.flatMap(t => [t, ...t.subtasks]);
-    const completedItems = allItems.filter(i => i.status === STATUS.COMPLETE).length;
-    const completionRate = allItems.length > 0 ? Math.round((completedItems / allItems.length) * 100) : 0;
-    
-    const prompt = `You are helping someone reflect on their goal-tracking milestone. Here's their data:
-
-**Goal:** ${goal.title}
-**Period:** ${new Date(goal.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} to ${new Date(goal.endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-**Overall Completion:** ${completionRate}% (${completedItems}/${allItems.length} items)
-
-**Completed Tasks (${completedTasks.length}):**
-${completedTasks.map(t => `- ${t.title}${t.subtasks.length > 0 ? ` (${t.subtasks.filter(s => s.status === STATUS.COMPLETE).length}/${t.subtasks.length} subtasks)` : ''}`).join('\n') || '(none)'}
-
-**In Progress (${inProgressTasks.length}):**
-${inProgressTasks.map(t => `- ${t.title}`).join('\n') || '(none)'}
-
-**Not Started (${notStartedTasks.length}):**
-${notStartedTasks.map(t => `- ${t.title}`).join('\n') || '(none)'}
-
-**Journal Notes (${allNotes.length} entries):**
-${allNotes.slice(0, 15).map(n => `- [${n.date}]${n.taskTitle ? ` (${n.taskTitle})` : ''}: "${n.content}"`).join('\n') || '(no notes)'}
-${allNotes.length > 15 ? `\n... and ${allNotes.length - 15} more notes` : ''}
-
-Please write a warm, reflective summary (3-4 paragraphs) that:
-1. Celebrates what was accomplished
-2. Notes any patterns or themes from the notes and tasks
-3. Gently acknowledges what didn't get done without being critical
-4. Offers an encouraging perspective on the journey
-
-Keep the tone personal, warm, and supportive—like a thoughtful friend helping them reflect. Don't use bullet points. Don't start with "Great job!" or similar. Be genuine and specific to their actual accomplishments.`;
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
+      const response = await fetch('/api/summary', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [
-            { role: "user", content: prompt }
-          ],
+          tasks,
+          standaloneNotes,
+          goal
         })
       });
 
       const data = await response.json();
       
-      if (data.content && data.content[0] && data.content[0].text) {
-        const summaryText = data.content[0].text;
-        setSummary(summaryText);
-        onSaveSummary(summaryText);
+      if (data.summary) {
+        setSummary(data.summary);
+        onSaveSummary(data.summary);
         setIsExpanded(true);
+      } else if (data.error) {
+        throw new Error(data.error);
       } else {
         throw new Error('Unexpected response format');
       }
