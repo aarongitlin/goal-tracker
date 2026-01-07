@@ -5,14 +5,21 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// New keys for multi-milestone structure
-const MILESTONES_KEY = 'vacation-tracker:milestones';
-const LAST_VIEW_KEY = 'vacation-tracker:lastView';
+// Key generators with user namespace
+const getKeys = (userId) => ({
+  milestones: `user:${userId}:milestones`,
+  lastView: `user:${userId}:lastView`,
+});
 
-// Legacy keys (for migration)
+// Legacy keys (for migration of original user)
 const LEGACY_TASKS_KEY = 'vacation-tracker:tasks';
 const LEGACY_GOAL_KEY = 'vacation-tracker:goal';
 const LEGACY_NOTES_KEY = 'vacation-tracker:standaloneNotes';
+const LEGACY_MILESTONES_KEY = 'vacation-tracker:milestones';
+const LEGACY_LAST_VIEW_KEY = 'vacation-tracker:lastView';
+
+// Original user ID for migration (your data)
+const ORIGINAL_USER_ID = 'original-user';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,41 +30,57 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // Get userId from query (GET) or body (POST)
+  const userId = req.method === 'GET' 
+    ? req.query.userId 
+    : req.body?.userId;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+
+  const keys = getKeys(userId);
+
   try {
     if (req.method === 'GET') {
-      // Check for new multi-milestone structure first
-      let milestones = await redis.get(MILESTONES_KEY);
-      let lastView = await redis.get(LAST_VIEW_KEY);
+      let milestones = await redis.get(keys.milestones);
+      let lastView = await redis.get(keys.lastView);
       
-      // If no milestones exist, check for legacy data and migrate
-      if (!milestones) {
-        const legacyTasks = await redis.get(LEGACY_TASKS_KEY);
-        const legacyGoal = await redis.get(LEGACY_GOAL_KEY);
-        const legacyNotes = await redis.get(LEGACY_NOTES_KEY);
+      // Special migration for original user: check legacy keys
+      if (!milestones && userId === ORIGINAL_USER_ID) {
+        // First check if there's data in the old multi-milestone format
+        const legacyMilestones = await redis.get(LEGACY_MILESTONES_KEY);
+        const legacyLastView = await redis.get(LEGACY_LAST_VIEW_KEY);
         
-        if (legacyTasks || legacyGoal) {
-          // Migrate legacy data to new structure
-          const migratedMilestone = {
-            id: 'migrated-' + Date.now(),
-            title: legacyGoal?.title || 'Vacation Goals',
-            startDate: legacyGoal?.startDate || '2025-12-21',
-            endDate: legacyGoal?.endDate || '2026-01-07',
-            tasks: legacyTasks || [],
-            standaloneNotes: legacyNotes || [],
-            createdAt: new Date().toISOString()
-          };
+        if (legacyMilestones) {
+          milestones = legacyMilestones;
+          lastView = legacyLastView;
+        } else {
+          // Check for even older single-milestone format
+          const legacyTasks = await redis.get(LEGACY_TASKS_KEY);
+          const legacyGoal = await redis.get(LEGACY_GOAL_KEY);
+          const legacyNotes = await redis.get(LEGACY_NOTES_KEY);
           
-          milestones = [migratedMilestone];
-          lastView = { view: 'milestone', milestoneId: migratedMilestone.id };
-          
-          // Save migrated data
-          await redis.set(MILESTONES_KEY, milestones);
-          await redis.set(LAST_VIEW_KEY, lastView);
-          
-          // Optionally clean up legacy keys (commented out for safety)
-          // await redis.del(LEGACY_TASKS_KEY);
-          // await redis.del(LEGACY_GOAL_KEY);
-          // await redis.del(LEGACY_NOTES_KEY);
+          if (legacyTasks || legacyGoal) {
+            const migratedMilestone = {
+              id: 'migrated-' + Date.now(),
+              title: legacyGoal?.title || 'Vacation Goals',
+              startDate: legacyGoal?.startDate || '2025-12-21',
+              endDate: legacyGoal?.endDate || '2026-01-07',
+              tasks: legacyTasks || [],
+              standaloneNotes: legacyNotes || [],
+              createdAt: new Date().toISOString()
+            };
+            
+            milestones = [migratedMilestone];
+            lastView = { view: 'milestone', milestoneId: migratedMilestone.id };
+          }
+        }
+        
+        // Save migrated data to new namespaced keys
+        if (milestones) {
+          await redis.set(keys.milestones, milestones);
+          await redis.set(keys.lastView, lastView);
         }
       }
       
@@ -71,11 +94,11 @@ export default async function handler(req, res) {
       const { milestones, lastView } = req.body;
       
       if (milestones !== undefined) {
-        await redis.set(MILESTONES_KEY, milestones);
+        await redis.set(keys.milestones, milestones);
       }
       
       if (lastView !== undefined) {
-        await redis.set(LAST_VIEW_KEY, lastView);
+        await redis.set(keys.lastView, lastView);
       }
       
       return res.status(200).json({ success: true });
