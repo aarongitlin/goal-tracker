@@ -62,13 +62,11 @@ ${notStartedTasks.map(t => `- ${t.title}`).join('\n') || '(none)'}
 ${allNotes.slice(0, 15).map(n => `- [${n.date}]${n.taskTitle ? ` (${n.taskTitle})` : ''}: "${n.content}"`).join('\n') || '(no notes)'}
 ${allNotes.length > 15 ? `\n... and ${allNotes.length - 15} more notes` : ''}
 
-Please write a warm, reflective summary (3-4 paragraphs) that:
-1. Celebrates what was accomplished
-2. Notes any patterns or themes from the notes and tasks
-3. Gently acknowledges what didn't get done without being critical
-4. Offers an encouraging perspective on the journey
+Write a brief, warm reflection in exactly 2 short paragraphs:
+- First paragraph: Celebrate what was accomplished, noting specific themes or patterns from their tasks and notes
+- Second paragraph: Offer an encouraging closing thought about the journey, gently acknowledging anything incomplete without dwelling on it
 
-Keep the tone personal, warm, and supportive—like a thoughtful friend helping them reflect. Don't use bullet points. Don't start with "Great job!" or similar. Be genuine and specific to their actual accomplishments.`;
+Keep it concise and personal—like a thoughtful note from a friend. Don't use bullet points. Don't start with "Great job!" or similar. Be genuine and specific to their actual accomplishments.`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -80,7 +78,7 @@ Keep the tone personal, warm, and supportive—like a thoughtful friend helping 
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 500,
         messages: [
           { role: 'user', content: prompt }
         ]
