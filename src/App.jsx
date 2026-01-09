@@ -216,9 +216,52 @@ function TagEditor({ selectedTags, onTagsChange, allTags, isDark }) {
   );
 }
 
-const LOCAL_STORAGE_KEY = 'vacation-tracker-milestones';
-const LOCAL_VIEW_KEY = 'vacation-tracker-lastView';
-const LOCAL_SUMMARY_PREFIX = 'vacation-tracker-summary-';
+// New localStorage keys
+const LOCAL_STORAGE_KEY = 'framed-milestones';
+const LOCAL_VIEW_KEY = 'framed-lastView';
+const LOCAL_SUMMARY_PREFIX = 'framed-summary-';
+
+// Old localStorage keys for migration
+const OLD_LOCAL_STORAGE_KEY = 'vacation-tracker-milestones';
+const OLD_LOCAL_VIEW_KEY = 'vacation-tracker-lastView';
+const OLD_LOCAL_SUMMARY_PREFIX = 'vacation-tracker-summary-';
+
+// Migrate localStorage from old keys to new keys
+function migrateLocalStorage() {
+  // Migrate milestones
+  if (!localStorage.getItem(LOCAL_STORAGE_KEY) && localStorage.getItem(OLD_LOCAL_STORAGE_KEY)) {
+    const oldData = localStorage.getItem(OLD_LOCAL_STORAGE_KEY);
+    localStorage.setItem(LOCAL_STORAGE_KEY, oldData);
+    localStorage.removeItem(OLD_LOCAL_STORAGE_KEY);
+  }
+  
+  // Migrate lastView
+  if (!localStorage.getItem(LOCAL_VIEW_KEY) && localStorage.getItem(OLD_LOCAL_VIEW_KEY)) {
+    const oldView = localStorage.getItem(OLD_LOCAL_VIEW_KEY);
+    localStorage.setItem(LOCAL_VIEW_KEY, oldView);
+    localStorage.removeItem(OLD_LOCAL_VIEW_KEY);
+  }
+  
+  // Migrate summaries
+  const keysToMigrate = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(OLD_LOCAL_SUMMARY_PREFIX)) {
+      keysToMigrate.push(key);
+    }
+  }
+  keysToMigrate.forEach(oldKey => {
+    const milestoneId = oldKey.replace(OLD_LOCAL_SUMMARY_PREFIX, '');
+    const newKey = LOCAL_SUMMARY_PREFIX + milestoneId;
+    if (!localStorage.getItem(newKey)) {
+      localStorage.setItem(newKey, localStorage.getItem(oldKey));
+    }
+    localStorage.removeItem(oldKey);
+  });
+}
+
+// Run migration on module load
+migrateLocalStorage();
 
 function CircularCountdown({ daysLeft, totalDays, size = 48, darkText = false, isComplete = false }) {
   const progress = totalDays > 0 ? Math.max(0, Math.min(1, 1 - (daysLeft / totalDays))) : 1;
