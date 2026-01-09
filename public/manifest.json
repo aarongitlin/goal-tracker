@@ -1,7 +1,7 @@
 {
-  "name": "Vacation Goals",
-  "short_name": "Goals",
-  "description": "Track your vacation goals",
+  "name": "Framed",
+  "short_name": "Framed",
+  "description": "Track your milestones and goals",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f9fafb",
