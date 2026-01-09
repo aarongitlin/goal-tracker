@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, Cloud, CloudOff, RefreshCw, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp, Home } from 'lucide-react';
+import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp, Home, RefreshCw } from 'lucide-react';
 
 const STATUS = {
   NOT_STARTED: 'not_started',
@@ -12,13 +12,6 @@ const DEFAULT_TAGS = ['Learning', 'Health', 'Projects', 'Work', 'Personal', 'Pla
 const DATE_FILTERS = {
   ALL: 'all',
   TODAY: 'today'
-};
-
-const SYNC_STATUS = {
-  SYNCED: 'synced',
-  SYNCING: 'syncing',
-  OFFLINE: 'offline',
-  ERROR: 'error'
 };
 
 const VIEWS = {
@@ -98,36 +91,6 @@ function getMilestoneCompleteGradient() {
     gradient: `radial-gradient(ellipse at 30% 20%, rgba(74, 222, 128, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(59, 130, 246, 0.4) 0%, transparent 50%), linear-gradient(135deg, #065f46 0%, #047857 25%, #0d9488 50%, #0891b2 75%, #0284c7 100%)`,
     darkText: false
   };
-}
-
-function useDebounce(callback, delay) {
-  const timeoutRef = useRef(null);
-  const debouncedCallback = useCallback((...args) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => callback(...args), delay);
-  }, [callback, delay]);
-  return debouncedCallback;
-}
-
-function SyncIndicator({ status, onRefresh, isDark }) {
-  const icons = {
-    [SYNC_STATUS.SYNCED]: <Cloud className="w-4 h-4" />,
-    [SYNC_STATUS.SYNCING]: <RefreshCw className="w-4 h-4 animate-spin" />,
-    [SYNC_STATUS.OFFLINE]: <CloudOff className="w-4 h-4" />,
-    [SYNC_STATUS.ERROR]: <CloudOff className="w-4 h-4" />
-  };
-  const colors = {
-    [SYNC_STATUS.SYNCED]: isDark ? '#4ade80' : '#16a34a',
-    [SYNC_STATUS.SYNCING]: isDark ? '#60a5fa' : '#3b82f6',
-    [SYNC_STATUS.OFFLINE]: isDark ? '#9ca3af' : '#6b7280',
-    [SYNC_STATUS.ERROR]: isDark ? '#f87171' : '#ef4444'
-  };
-  return (
-    <button onClick={onRefresh} className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium" style={{ color: colors[status], backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
-      {icons[status]}
-      {status === SYNC_STATUS.SYNCING ? 'Syncing...' : status === SYNC_STATUS.ERROR ? 'Retry' : ''}
-    </button>
-  );
 }
 
 function TagsModal({ isOpen, onClose, allTags, selectedTags, onTagsChange, isDark }) {
@@ -216,7 +179,7 @@ function TagEditor({ selectedTags, onTagsChange, allTags, isDark }) {
   );
 }
 
-// New localStorage keys
+// localStorage keys
 const LOCAL_STORAGE_KEY = 'framed-milestones';
 const LOCAL_VIEW_KEY = 'framed-lastView';
 const LOCAL_SUMMARY_PREFIX = 'framed-summary-';
@@ -855,7 +818,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
 }
 
 // Dashboard Component
-function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, currentHour, syncStatus, onRefresh }) {
+function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, currentHour }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   const bgColor = isDark ? '#111827' : '#f9fafb';
@@ -916,10 +879,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
       <div className="px-4 pt-6 pb-6" style={{ background: gradient }}>
         <div className="flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{greeting}</p>
-              <SyncIndicator status={syncStatus} onRefresh={onRefresh} isDark={!darkText} />
-            </div>
+            <p className="text-sm font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{greeting}</p>
             <h1 className="text-2xl font-bold mt-0.5" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>Your Milestones</h1>
             <p className="text-sm mt-1" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>
               {milestones.length} milestone{milestones.length !== 1 ? 's' : ''} · {activeMilestones.length} active
@@ -981,25 +941,8 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
   );
 }
 
-// API functions
-async function fetchFromAPI() {
-  const response = await fetch('/api/tasks');
-  if (!response.ok) throw new Error('Failed to fetch');
-  return response.json();
-}
-
-async function saveToAPI(milestones, lastView) {
-  const response = await fetch('/api/tasks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ milestones, lastView })
-  });
-  if (!response.ok) throw new Error('Failed to save');
-  return response.json();
-}
-
 // Milestone View Component (the existing task list view)
-function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHour, syncStatus, onRefresh }) {
+function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHour }) {
   const [filterDate, setFilterDate] = useState(DATE_FILTERS.ALL);
   const [selectedTags, setSelectedTags] = useState([]);
   const [showTagsModal, setShowTagsModal] = useState(false);
@@ -1160,7 +1103,6 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
                 ) : (
                   <p className="text-sm font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{greeting}</p>
                 )}
-                <SyncIndicator status={syncStatus} onRefresh={onRefresh} isDark={!darkText} />
               </div>
               <h1 className="text-2xl font-bold mt-0.5" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>
                 {isMilestoneComplete ? milestone.title : todayFormatted}
@@ -1233,39 +1175,8 @@ export default function VacationTracker() {
   const [milestones, setMilestones] = useState([]);
   const [currentView, setCurrentView] = useState({ view: VIEWS.DASHBOARD });
   const [loading, setLoading] = useState(true);
-  const [syncStatus, setSyncStatus] = useState(SYNC_STATUS.SYNCED);
   const [isDark, setIsDark] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
-  
-  const debouncedSave = useDebounce(async (milestonesToSave, viewToSave) => {
-    setSyncStatus(SYNC_STATUS.SYNCING);
-    try {
-      await saveToAPI(milestonesToSave, viewToSave);
-      setSyncStatus(SYNC_STATUS.SYNCED);
-    } catch (error) {
-      console.error('Sync error:', error);
-      setSyncStatus(SYNC_STATUS.ERROR);
-    }
-  }, 1000);
-  
-  const handleRefresh = useCallback(async () => {
-    setSyncStatus(SYNC_STATUS.SYNCING);
-    try {
-      const data = await fetchFromAPI();
-      if (data.milestones) {
-        setMilestones(data.milestones);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.milestones));
-      }
-      if (data.lastView) {
-        setCurrentView(data.lastView);
-        localStorage.setItem(LOCAL_VIEW_KEY, JSON.stringify(data.lastView));
-      }
-      setSyncStatus(SYNC_STATUS.SYNCED);
-    } catch (error) {
-      console.error('Refresh error:', error);
-      setSyncStatus(SYNC_STATUS.ERROR);
-    }
-  }, []);
   
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -1280,57 +1191,43 @@ export default function VacationTracker() {
     return () => clearInterval(i);
   }, []);
   
-  // Initial load
+  // Initial load from localStorage
   useEffect(() => {
-    async function loadData() {
-      try {
-        const data = await fetchFromAPI();
-        if (data.milestones && data.milestones.length > 0) {
-          setMilestones(data.milestones);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.milestones));
-        }
-        if (data.lastView) {
-          // Validate the lastView - make sure milestone still exists
-          if (data.lastView.view === VIEWS.MILESTONE && data.lastView.milestoneId) {
-            const exists = (data.milestones || []).some(m => m.id === data.lastView.milestoneId);
-            if (exists) {
-              setCurrentView(data.lastView);
-            } else {
-              setCurrentView({ view: VIEWS.DASHBOARD });
-            }
-          } else {
-            setCurrentView(data.lastView);
-          }
-          localStorage.setItem(LOCAL_VIEW_KEY, JSON.stringify(data.lastView));
-        }
-        setSyncStatus(SYNC_STATUS.SYNCED);
-      } catch (error) {
-        console.error('Initial load error:', error);
-        setSyncStatus(SYNC_STATUS.OFFLINE);
-        // Try localStorage fallback
-        const savedMilestones = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (savedMilestones) setMilestones(JSON.parse(savedMilestones));
-        const savedView = localStorage.getItem(LOCAL_VIEW_KEY);
-        if (savedView) setCurrentView(JSON.parse(savedView));
-      }
-      setLoading(false);
+    const savedMilestones = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedMilestones) {
+      const parsed = JSON.parse(savedMilestones);
+      setMilestones(parsed);
     }
-    loadData();
+    
+    const savedView = localStorage.getItem(LOCAL_VIEW_KEY);
+    if (savedView) {
+      const parsed = JSON.parse(savedView);
+      // Validate the lastView - make sure milestone still exists
+      if (parsed.view === VIEWS.MILESTONE && parsed.milestoneId) {
+        const savedMs = savedMilestones ? JSON.parse(savedMilestones) : [];
+        const exists = savedMs.some(m => m.id === parsed.milestoneId);
+        if (exists) {
+          setCurrentView(parsed);
+        }
+      } else {
+        setCurrentView(parsed);
+      }
+    }
+    
+    setLoading(false);
   }, []);
   
-  // Save when milestones change
+  // Save milestones to localStorage when they change
   useEffect(() => {
-    if (!loading && milestones.length >= 0) {
+    if (!loading) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(milestones));
-      debouncedSave(milestones, currentView);
     }
   }, [milestones, loading]);
   
-  // Save when view changes
+  // Save view to localStorage when it changes
   useEffect(() => {
     if (!loading) {
       localStorage.setItem(LOCAL_VIEW_KEY, JSON.stringify(currentView));
-      debouncedSave(milestones, currentView);
     }
   }, [currentView, loading]);
   
@@ -1366,8 +1263,6 @@ export default function VacationTracker() {
           onBack={handleBackToDashboard}
           isDark={isDark}
           currentHour={currentHour}
-          syncStatus={syncStatus}
-          onRefresh={handleRefresh}
         />
       );
     }
@@ -1380,8 +1275,6 @@ export default function VacationTracker() {
       onCreateMilestone={handleCreateMilestone}
       isDark={isDark}
       currentHour={currentHour}
-      syncStatus={syncStatus}
-      onRefresh={handleRefresh}
     />
   );
 }
