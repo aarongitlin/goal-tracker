@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp, Home, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp, Home, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 
 const STATUS = {
   NOT_STARTED: 'not_started',
@@ -7,7 +7,7 @@ const STATUS = {
   COMPLETE: 'complete'
 };
 
-const DEFAULT_TAGS = ['Learning', 'Health', 'Projects', 'Work', 'Personal', 'Planning'];
+const DEFAULT_TAGS = ['Personal', 'Work'];
 
 const DATE_FILTERS = {
   ALL: 'all',
@@ -20,10 +20,22 @@ const VIEWS = {
 };
 
 function getGreeting(hour) {
-  if (hour >= 5 && hour < 12) return 'Good morning';
-  if (hour >= 12 && hour < 17) return 'Good afternoon';
-  if (hour >= 17 && hour < 21) return 'Good evening';
-  return 'Good night';
+  if (hour >= 5 && hour < 12) return "mornin'!";
+  if (hour >= 12 && hour < 17) return 'afternoon!';
+  if (hour >= 17 && hour < 21) return "evenin'!";
+  return 'night owl!';
+}
+
+// Framed logo component
+function FramedLogo({ color = '#ffffff', size = 24 }) {
+  const height = size;
+  const width = size * (291 / 336); // maintain aspect ratio
+  return (
+    <svg width={width} height={height} viewBox="0 0 291 336" fill="none">
+      <path d="M0 270.828V0H180.552V49.2414H49.2414V98.4827H164.138V147.724H49.2414V270.828H0Z" fill={color}/>
+      <path d="M290.552 65V335.828H110V286.586H241.31V237.345H126.414V188.103H241.31V65H290.552Z" fill={color}/>
+    </svg>
+  );
 }
 
 function formatToday() {
@@ -74,16 +86,184 @@ function getMilestoneStatus(startDate, endDate) {
   return 'active';
 }
 
-function getTimeGradient(hour) {
+function getTimeColors(hour) {
   const h = ((hour % 24) + 24) % 24;
-  if (h >= 22 || h < 5) return { gradient: `radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(49, 46, 129, 0.6) 0%, transparent 50%), linear-gradient(to bottom, #1e1b4b 0%, #312e81 40%, #1e293b 100%)`, darkText: false };
-  if (h >= 5 && h < 6.5) return { gradient: `radial-gradient(ellipse at 70% 30%, rgba(99, 102, 241, 0.5) 0%, transparent 50%), linear-gradient(to bottom, #312e81 0%, #3730a3 30%, #1e3a8a 70%, #1e293b 100%)`, darkText: false };
-  if (h >= 6.5 && h < 8) return { gradient: `radial-gradient(ellipse at 70% 20%, rgba(251, 191, 36, 0.4) 0%, transparent 40%), linear-gradient(to bottom, #fda4af 0%, #fb923c 25%, #f472b6 60%, #c026d3 100%)`, darkText: false };
-  if (h >= 8 && h < 11) return { gradient: `radial-gradient(ellipse at 50% 0%, rgba(253, 224, 71, 0.6) 0%, transparent 50%), linear-gradient(to bottom, #fde047 0%, #fbbf24 40%, #fb923c 100%)`, darkText: true };
-  if (h >= 11 && h < 16) return { gradient: `radial-gradient(ellipse at 50% 30%, rgba(254, 249, 195, 0.5) 0%, transparent 40%), linear-gradient(to bottom, #fef08a 0%, #fde047 30%, #fbbf24 70%, #f59e0b 100%)`, darkText: true };
-  if (h >= 16 && h < 18) return { gradient: `radial-gradient(ellipse at 30% 20%, rgba(251, 146, 60, 0.5) 0%, transparent 40%), linear-gradient(to bottom, #fb923c 0%, #f97316 25%, #f43f5e 60%, #be185d 100%)`, darkText: false };
-  if (h >= 18 && h < 20) return { gradient: `radial-gradient(ellipse at 60% 20%, rgba(192, 132, 252, 0.4) 0%, transparent 40%), linear-gradient(to bottom, #a855f7 0%, #7c3aed 30%, #6d28d9 60%, #4c1d95 100%)`, darkText: false };
-  return { gradient: `radial-gradient(ellipse at 40% 30%, rgba(124, 58, 237, 0.3) 0%, transparent 40%), linear-gradient(to bottom, #581c87 0%, #4c1d95 30%, #312e81 70%, #1e293b 100%)`, darkText: false };
+
+  // NIGHT (10pm - 5am): Deep indigo/violet
+  if (h >= 22 || h < 5) {
+    return { colors: ['#1e1b4b', '#312e81', '#4c1d95', '#581c87'], darkText: false };
+  }
+  // DAWN (5am - 6:30am): Deep blue to purple
+  if (h >= 5 && h < 6.5) {
+    return { colors: ['#312e81', '#4338ca', '#6366f1', '#818cf8'], darkText: false };
+  }
+  // SUNRISE (6:30am - 8am): Coral/pink
+  if (h >= 6.5 && h < 8) {
+    return { colors: ['#fda4af', '#fb7185', '#f472b6', '#e879f9'], darkText: false };
+  }
+  // MORNING (8am - 11am): Golden amber
+  if (h >= 8 && h < 11) {
+    return { colors: ['#fef08a', '#fde047', '#facc15', '#f59e0b'], darkText: true };
+  }
+  // MIDDAY (11am - 4pm): Warm cream/yellow
+  if (h >= 11 && h < 16) {
+    return { colors: ['#fefce8', '#fef9c3', '#fef08a', '#fde047'], darkText: true };
+  }
+  // LATE AFTERNOON (4pm - 6pm): Deep orange
+  if (h >= 16 && h < 18) {
+    return { colors: ['#fed7aa', '#fdba74', '#fb923c', '#f97316'], darkText: false };
+  }
+  // SUNSET (6pm - 8pm): Pink/magenta
+  if (h >= 18 && h < 20) {
+    return { colors: ['#f9a8d4', '#f472b6', '#ec4899', '#db2777'], darkText: false };
+  }
+  // DUSK (8pm - 10pm): Purple to indigo
+  return { colors: ['#c084fc', '#a855f7', '#8b5cf6', '#7c3aed'], darkText: false };
+}
+
+// Helper to create gradient string from colors (for backward compat)
+function colorsToGradient(colors) {
+  return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 35%, ${colors[2]} 65%, ${colors[3]} 100%)`;
+}
+
+function getTimeGradient(hour) {
+  const { colors, darkText } = getTimeColors(hour);
+  return { gradient: colorsToGradient(colors), colors, darkText };
+}
+
+// Immersive animated background with organic blob shapes and film grain
+function ImmersiveBackground({ colors, darkText }) {
+  return (
+    <div className="fixed inset-0" style={{ zIndex: 0 }}>
+      {/* Base color */}
+      <div
+        className="absolute inset-0"
+        style={{ backgroundColor: colors[0] }}
+      />
+
+      {/* Contrast adjustment overlay - darkens for dark mode, lightens for light mode */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundColor: darkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)',
+        }}
+      />
+
+      {/* Large organic blob - top right */}
+      <div
+        className="absolute"
+        style={{
+          top: '-20%',
+          right: '-10%',
+          width: '80%',
+          height: '70%',
+          background: `radial-gradient(ellipse at center, ${colors[1]} 0%, ${colors[2]}88 40%, transparent 70%)`,
+          borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%',
+          filter: 'blur(40px)',
+          animation: 'blob1 20s ease-in-out infinite'
+        }}
+      />
+
+      {/* Medium blob - bottom left */}
+      <div
+        className="absolute"
+        style={{
+          bottom: '-10%',
+          left: '-15%',
+          width: '70%',
+          height: '60%',
+          background: `radial-gradient(ellipse at center, ${colors[2]} 0%, ${colors[3]}77 50%, transparent 70%)`,
+          borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+          filter: 'blur(50px)',
+          animation: 'blob2 25s ease-in-out infinite'
+        }}
+      />
+
+      {/* Small accent blob - center */}
+      <div
+        className="absolute"
+        style={{
+          top: '30%',
+          left: '20%',
+          width: '50%',
+          height: '45%',
+          background: `radial-gradient(ellipse at center, ${colors[3]}99 0%, ${colors[1]}44 40%, transparent 65%)`,
+          borderRadius: '50% 60% 40% 50% / 40% 60% 50% 60%',
+          filter: 'blur(60px)',
+          animation: 'blob3 18s ease-in-out infinite'
+        }}
+      />
+
+      {/* Top left accent */}
+      <div
+        className="absolute"
+        style={{
+          top: '5%',
+          left: '10%',
+          width: '35%',
+          height: '30%',
+          background: `radial-gradient(ellipse at center, ${colors[1]}66 0%, transparent 60%)`,
+          borderRadius: '70% 30% 50% 50% / 50% 50% 50% 50%',
+          filter: 'blur(30px)',
+          animation: 'blob4 22s ease-in-out infinite'
+        }}
+      />
+
+      {/* Bottom right smaller blob */}
+      <div
+        className="absolute"
+        style={{
+          bottom: '15%',
+          right: '5%',
+          width: '40%',
+          height: '35%',
+          background: `radial-gradient(ellipse at center, ${colors[2]}55 0%, transparent 55%)`,
+          borderRadius: '40% 60% 55% 45% / 55% 45% 50% 50%',
+          filter: 'blur(45px)',
+          animation: 'blob5 28s ease-in-out infinite'
+        }}
+      />
+
+      {/* Film grain texture overlay - static for performance */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          opacity: 0.1,
+          mixBlendMode: 'overlay'
+        }}
+      />
+
+      <style>{`
+        @keyframes blob1 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+          25% { transform: translate(4%, 2%) rotate(3deg) scale(1.03); }
+          50% { transform: translate(2%, 5%) rotate(6deg) scale(1.06); }
+          75% { transform: translate(-2%, 3%) rotate(2deg) scale(1.02); }
+        }
+        @keyframes blob2 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+          25% { transform: translate(-3%, -3%) rotate(-4deg) scale(1.05); }
+          50% { transform: translate(-5%, 2%) rotate(-7deg) scale(1.08); }
+          75% { transform: translate(2%, -2%) rotate(-2deg) scale(1.03); }
+        }
+        @keyframes blob3 {
+          0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+          33% { transform: translate(6%, -4%) scale(1.08) rotate(5deg); }
+          66% { transform: translate(-3%, 5%) scale(1.04) rotate(-3deg); }
+        }
+        @keyframes blob4 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+          50% { transform: translate(5%, 6%) rotate(10deg) scale(1.1); }
+        }
+        @keyframes blob5 {
+          0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+          33% { transform: translate(-5%, 3%) scale(1.07) rotate(-4deg); }
+          66% { transform: translate(4%, -4%) scale(0.95) rotate(6deg); }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 function getMilestoneCompleteGradient() {
@@ -93,7 +273,10 @@ function getMilestoneCompleteGradient() {
   };
 }
 
-function TagsModal({ isOpen, onClose, allTags, selectedTags, onTagsChange, isDark }) {
+function TagsModal({ isOpen, onClose, allTags, selectedTags, onTagsChange, onRenameTag, onDeleteTag, isDark }) {
+  const [editingTag, setEditingTag] = useState(null);
+  const [editValue, setEditValue] = useState('');
+
   if (!isOpen) return null;
   const toggleTag = (tag) => {
     if (selectedTags.includes(tag)) onTagsChange(selectedTags.filter(t => t !== tag));
@@ -107,7 +290,33 @@ function TagsModal({ isOpen, onClose, allTags, selectedTags, onTagsChange, isDar
   const textPrimary = isDark ? '#f3f4f6' : '#111827';
   const textSecondary = isDark ? '#9ca3af' : '#6b7280';
   const itemBg = isDark ? '#374151' : '#f3f4f6';
-  
+  const inputBg = isDark ? '#1f2937' : '#ffffff';
+  const inputBorder = isDark ? '#4b5563' : '#d1d5db';
+
+  const handleStartEdit = (tag, e) => {
+    e.stopPropagation();
+    setEditingTag(tag);
+    setEditValue(tag);
+  };
+
+  const handleSaveEdit = () => {
+    if (editValue.trim() && editValue !== editingTag) {
+      onRenameTag(editingTag, editValue.trim());
+    }
+    setEditingTag(null);
+    setEditValue('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTag(null);
+    setEditValue('');
+  };
+
+  const handleDelete = (tag, e) => {
+    e.stopPropagation();
+    onDeleteTag(tag);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
       <div className="w-full sm:max-w-sm sm:rounded-xl rounded-t-xl max-h-[70vh] overflow-hidden" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
@@ -122,12 +331,38 @@ function TagsModal({ isOpen, onClose, allTags, selectedTags, onTagsChange, isDar
         <div className="p-3 overflow-y-auto max-h-[50vh]">
           <div className="space-y-2">
             {allTags.map(tag => (
-              <button key={tag} onClick={() => toggleTag(tag)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: selectedTags.includes(tag) ? itemBg : 'transparent' }}>
-                <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ backgroundColor: selectedTags.includes(tag) ? '#3b82f6' : 'transparent', border: selectedTags.includes(tag) ? 'none' : `2px solid ${isDark ? '#4b5563' : '#d1d5db'}` }}>
-                  {selectedTags.includes(tag) && <Check className="w-4 h-4 text-white" />}
-                </div>
-                <span className="text-base font-medium" style={{ color: textPrimary }}>{tag}</span>
-              </button>
+              <div key={tag} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl" style={{ backgroundColor: selectedTags.includes(tag) ? itemBg : 'transparent' }}>
+                <button onClick={() => toggleTag(tag)} className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ backgroundColor: selectedTags.includes(tag) ? '#3b82f6' : 'transparent', border: selectedTags.includes(tag) ? 'none' : `2px solid ${isDark ? '#4b5563' : '#d1d5db'}` }}>
+                    {selectedTags.includes(tag) && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  {editingTag === tag ? (
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+                      onBlur={handleSaveEdit}
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 px-2 py-1 text-base font-medium rounded"
+                      style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="text-base font-medium truncate" style={{ color: textPrimary }}>{tag}</span>
+                  )}
+                </button>
+                {editingTag !== tag && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={(e) => handleStartEdit(tag, e)} className="p-2.5 rounded-full hover:bg-black/10" style={{ color: textSecondary, opacity: 0.5 }}>
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button onClick={(e) => handleDelete(tag, e)} className="p-2.5 rounded-full hover:bg-red-500/10" style={{ color: '#ef4444', opacity: 0.6 }}>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
             {allTags.length === 0 && <p className="text-center py-8" style={{ color: textSecondary }}>No tags yet.</p>}
           </div>
@@ -169,10 +404,9 @@ function TagEditor({ selectedTags, onTagsChange, allTags, isDark }) {
       {!isAddingNew ? (
         <button type="button" onClick={() => setIsAddingNew(true)} className="px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1" style={{ backgroundColor: buttonBg, color: isDark ? '#9ca3af' : '#6b7280' }}><Plus className="w-3 h-3" /> New</button>
       ) : (
-        <div className="flex items-center gap-1">
-          <input type="text" value={newTagInput} onChange={(e) => setNewTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewTag(); } if (e.key === 'Escape') { setIsAddingNew(false); setNewTagInput(''); }}} placeholder="Tag name..." className="px-2 py-1 text-sm rounded-full w-24" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? '#f3f4f6' : '#111827' }} autoFocus />
-          <button type="button" onClick={handleAddNewTag} className="p-1.5 bg-blue-500 text-white rounded-full"><Check className="w-3 h-3" /></button>
-          <button type="button" onClick={() => { setIsAddingNew(false); setNewTagInput(''); }} className="p-1.5 rounded-full" style={{ backgroundColor: buttonBg, color: buttonText }}><X className="w-3 h-3" /></button>
+        <div className="relative">
+          <input type="text" value={newTagInput} onChange={(e) => setNewTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewTag(); } if (e.key === 'Escape') { setIsAddingNew(false); setNewTagInput(''); }}} placeholder="Tag name..." className="pl-3 pr-7 py-1.5 text-sm rounded-full w-32" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? '#f3f4f6' : '#111827' }} autoFocus />
+          <button type="button" onClick={() => { setIsAddingNew(false); setNewTagInput(''); }} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-black/10" style={{ color: isDark ? '#9ca3af' : '#6b7280' }}><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
     </div>
@@ -661,7 +895,7 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
   const isTouch = useRef(false);
   const isPressing = useRef(false);
   const handleRef = useRef(null);
-  const LONG_PRESS_DURATION = 300;
+  const LONG_PRESS_DURATION = 150; // Reduced for faster response on desktop
   const textMuted = isDark ? '#6b7280' : '#9ca3af';
   
   useEffect(() => {
@@ -672,7 +906,15 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
     return () => { handle.removeEventListener('touchmove', preventScroll); };
   }, []);
   
-  const startPress = (e) => { isPressing.current = true; didLongPress.current = false; longPressRef.current = setTimeout(() => { didLongPress.current = true; onDragStart?.(e); }, LONG_PRESS_DURATION); };
+  const startPress = (e) => {
+    isPressing.current = true;
+    didLongPress.current = false;
+    const event = e; // Capture the event
+    longPressRef.current = setTimeout(() => {
+      didLongPress.current = true;
+      onDragStart?.(event);
+    }, LONG_PRESS_DURATION);
+  };
   const endPress = () => { isPressing.current = false; if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } };
   const cancelPress = () => { isPressing.current = false; if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } };
   const handleTouchStart = (e) => { isTouch.current = true; startPress(e); };
@@ -688,60 +930,149 @@ function DragHandle({ isDark, onDragStart, isDragging }) {
   );
 }
 
-function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes, onDragStart, isDragging, isDropTarget, isMilestoneComplete }) {
+function TaskItem({ task, onUpdate, onDelete, allTags, isDark, onOpenNotes, onDragStart, isDragging, isMilestoneComplete, isEditing, onSetEditing }) {
   const [expanded, setExpanded] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [titleValue, setTitleValue] = useState(task.title);
   const [dueDateValue, setDueDateValue] = useState(task.dueDate || '');
   const [newSubtask, setNewSubtask] = useState('');
-  
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const dateInputRef = useRef(null);
+  const wasDraggingRef = useRef(false);
+
+  const editing = isEditing;
+  const setEditing = (val) => { if (!val) setShowDatePicker(false); onSetEditing(val ? task.id : null); };
+
+  // Track when dragging ends to prevent click from opening edit mode
+  useEffect(() => {
+    if (isDragging) {
+      wasDraggingRef.current = true;
+    } else if (wasDraggingRef.current) {
+      // Keep the flag true briefly after drag ends to block the click
+      const timer = setTimeout(() => {
+        wasDraggingRef.current = false;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isDragging]);
+
   const handleTap = (currentStatus) => currentStatus === STATUS.COMPLETE ? STATUS.NOT_STARTED : STATUS.COMPLETE;
   const handleLongPress = (currentStatus) => currentStatus === STATUS.IN_PROGRESS ? STATUS.NOT_STARTED : STATUS.IN_PROGRESS;
   const handleSave = () => { if (titleValue.trim()) onUpdate({ ...task, title: titleValue.trim(), dueDate: dueDateValue || null }); setEditing(false); };
   const handleAddSubtask = () => { if (newSubtask.trim()) { onUpdate({ ...task, subtasks: [...task.subtasks, { id: `${task.id}-${Date.now()}`, title: newSubtask.trim(), status: STATUS.NOT_STARTED }] }); setNewSubtask(''); } };
-  const handleCardClick = (e) => { if (editing || isDragging) return; if (e.target.closest('button') || e.target.closest('input') || e.target.closest('[data-drag-handle]')) return; setTitleValue(task.title); setDueDateValue(task.dueDate || ''); setEditing(true); };
-  
+  const handleCardClick = (e) => { if (editing || isDragging || wasDraggingRef.current) return; if (e.target.closest('button') || e.target.closest('input') || e.target.closest('[data-drag-handle]')) return; setTitleValue(task.title); setDueDateValue(task.dueDate || ''); setEditing(true); };
+
   const completedSubtasks = task.subtasks.filter(st => st.status === STATUS.COMPLETE).length;
   const hasSubtasks = task.subtasks.length > 0;
   const noteCount = (task.notes || []).length;
-  
-  const cardBg = isDark ? '#1f2937' : '#ffffff';
-  const cardBorder = isDark ? '#374151' : '#f3f4f6';
+
+  // Semi-transparent card with glass effect - more solid than milestone cards
+  const cardBg = isDark ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.75)';
+  const cardBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
   const textPrimary = isDark ? '#f3f4f6' : '#111827';
   const textSecondary = isDark ? '#9ca3af' : '#6b7280';
   const textMuted = isDark ? '#6b7280' : '#9ca3af';
-  const subtaskBg = isDark ? 'rgba(31,41,55,0.5)' : '#f9fafb';
-  const inputBg = isDark ? '#111827' : '#f9fafb';
-  
-  const dragStyle = isDragging ? { opacity: 0.5, transform: 'scale(1.02)', boxShadow: '0 8px 25px rgba(0,0,0,0.15)' } : isDropTarget ? { borderColor: '#3b82f6', borderWidth: '2px' } : {};
-  
+  const subtaskBg = isDark ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.03)';
+  const inputBg = isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.9)';
+
+  // Enhanced drag style - item lifts and becomes more prominent
+  const dragStyle = isDragging ? {
+    transform: 'scale(1.02)',
+    boxShadow: '0 12px 28px rgba(0,0,0,0.25), 0 8px 10px rgba(0,0,0,0.15)',
+  } : {};
+
+  const isComplete = task.status === STATUS.COMPLETE;
+
   return (
-    <div className={`rounded-xl shadow-sm overflow-hidden transition-all ${task.status === STATUS.COMPLETE ? 'opacity-50' : ''}`} style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, ...dragStyle }}>
-      <div className="px-3 py-2.5" onClick={handleCardClick}>
-        <div className="flex items-center gap-3">
+    <div className="relative rounded-xl shadow-sm overflow-hidden transition-all backdrop-blur-md" style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, ...dragStyle }}>
+      {/* Add note button - outside opacity wrapper for completed tasks */}
+      {!editing && isComplete && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpenNotes(task); }}
+          className="absolute right-12 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full shadow-sm"
+          style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: isDark ? '#d1d5db' : '#6b7280' }}
+        >
+          <BookOpen className="w-4 h-4" />
+        </button>
+      )}
+      <div className={isComplete ? 'opacity-50' : ''}>
+        <div className="px-3 py-2.5" onClick={handleCardClick}>
+          <div className="flex items-center gap-3">
           <StatusButton status={task.status} onTap={() => onUpdate({ ...task, status: handleTap(task.status) })} onLongPress={() => onUpdate({ ...task, status: handleLongPress(task.status) })} isDark={isDark} />
           <div className="flex-1 min-w-0">
             {editing ? (
-              <div className="space-y-2" onClick={e => e.stopPropagation()}>
-                <input type="text" value={titleValue} onChange={(e) => setTitleValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }} className="w-full text-sm font-medium px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: '1px solid #3b82f6', color: textPrimary }} autoFocus />
-                {!isMilestoneComplete && (
-                  <div className="flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: textMuted }} /><input type="date" value={dueDateValue} onChange={(e) => setDueDateValue(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, color: textPrimary }} />{dueDateValue && <button onClick={() => setDueDateValue('')} style={{ color: textMuted }}><X className="w-3 h-3" /></button>}</div>
-                )}
+              <div className="space-y-3" onClick={e => e.stopPropagation()}>
+                {/* Top row - Delete on left, Done on right */}
+                <div className="flex items-center justify-between min-h-[44px] sm:min-h-[32px] -mt-1">
+                  <button onClick={() => onDelete(task.id)} className="text-xs text-red-500 px-2 py-1">Delete</button>
+                  <button onClick={handleSave} className="text-sm text-blue-500 font-medium px-3 py-2 sm:py-1 rounded-lg active:bg-blue-500/10">Done</button>
+                </div>
+                {/* Title input - taller on mobile */}
+                <textarea
+                  value={titleValue}
+                  onChange={(e) => setTitleValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave(); } if (e.key === 'Escape') setEditing(false); }}
+                  className="w-full text-sm font-medium px-3 py-2 rounded-lg resize-none min-h-[60px] sm:min-h-[38px]"
+                  style={{ backgroundColor: inputBg, border: '1px solid #3b82f6', color: textPrimary }}
+                  rows={1}
+                  autoFocus
+                />
+                {/* Action buttons row - Note and Deadline */}
+                <div className="flex items-center gap-2">
+                  {/* Note button */}
+                  <button
+                    onClick={() => onOpenNotes(task)}
+                    className="flex items-center gap-1.5 text-sm py-1.5 sm:py-1 px-2 rounded-lg"
+                    style={{ color: textSecondary, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+                  >
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: noteCount > 0 ? '#3b82f6' : (isDark ? '#374151' : '#d1d5db'), color: noteCount > 0 ? 'white' : textMuted }}>
+                      <BookOpen className="w-3 h-3" />
+                    </span>
+                    <span className="text-xs">{noteCount > 0 ? noteCount : 'Note'}</span>
+                  </button>
+                  {/* Deadline button / picker */}
+                  {!isMilestoneComplete && (
+                    showDatePicker ? (
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}>
+                        <input
+                          ref={dateInputRef}
+                          type="date"
+                          value={dueDateValue}
+                          onChange={(e) => { setDueDateValue(e.target.value); setShowDatePicker(false); }}
+                          onBlur={() => setShowDatePicker(false)}
+                          className="text-xs bg-transparent border-none focus:outline-none"
+                          style={{ color: textPrimary, colorScheme: isDark ? 'dark' : 'light' }}
+                          autoFocus
+                        />
+                        {dueDateValue && <button onClick={() => { setDueDateValue(''); setShowDatePicker(false); }} className="p-0.5" style={{ color: textMuted }}><X className="w-3 h-3" /></button>}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setShowDatePicker(true); setTimeout(() => dateInputRef.current?.showPicker?.(), 50); }}
+                        className="flex items-center gap-1.5 text-sm py-1.5 sm:py-1 px-2 rounded-lg"
+                        style={{ color: textSecondary, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+                      >
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: dueDateValue ? '#3b82f6' : (isDark ? '#374151' : '#d1d5db'), color: dueDateValue ? 'white' : textMuted }}>
+                          <Calendar className="w-3 h-3" />
+                        </span>
+                        <span className="text-xs">{dueDateValue ? new Date(dueDateValue + 'T00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Deadline'}</span>
+                      </button>
+                    )
+                  )}
+                </div>
                 <TagEditor selectedTags={task.tags} onTagsChange={(tags) => onUpdate({ ...task, tags })} allTags={allTags} isDark={isDark} />
-                <div className="flex items-center gap-3"><button onClick={handleSave} className="text-sm text-blue-500 font-medium">Done</button><button onClick={() => onOpenNotes(task)} className="text-sm flex items-center gap-1" style={{ color: textSecondary }}><MessageSquare className="w-3.5 h-3.5" />{noteCount > 0 ? `${noteCount} notes` : 'Add note'}</button></div>
               </div>
             ) : (
               <><p className={`text-sm font-medium leading-snug ${task.status === STATUS.COMPLETE ? 'line-through' : ''}`} style={{ color: task.status === STATUS.COMPLETE ? textSecondary : textPrimary }}>{task.title}</p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   {!isMilestoneComplete && <DateBadge dueDate={task.dueDate} isDark={isDark} />}
                   {task.tags.map(tag => <TagBadge key={tag} tag={tag} isDark={isDark} />)}
-                  {noteCount > 0 && <button onClick={(e) => { e.stopPropagation(); onOpenNotes(task); }} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}><MessageSquare className="w-3 h-3" />{noteCount}</button>}
+                  {noteCount > 0 && <button onClick={(e) => { e.stopPropagation(); onOpenNotes(task); }} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}><BookOpen className="w-3 h-3" />{noteCount}</button>}
                   {hasSubtasks && <><span className="text-xs" style={{ color: textMuted }}>·</span><button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} className="text-xs flex items-center gap-0.5" style={{ color: textSecondary }}>{expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}{completedSubtasks}/{task.subtasks.length}</button></>}
                 </div>
               </>
             )}
           </div>
-          {!editing && <div data-drag-handle onClick={e => e.stopPropagation()}><DragHandle isDark={isDark} onDragStart={() => onDragStart(task.id)} isDragging={isDragging} /></div>}
+          {!editing && <div data-drag-handle onClick={e => e.stopPropagation()}><DragHandle isDark={isDark} onDragStart={(e) => onDragStart(task.id, e)} isDragging={isDragging} /></div>}
         </div>
       </div>
       {((expanded && hasSubtasks) || editing) && (
@@ -755,46 +1086,54 @@ function TaskItem({ task, onUpdate, allTags, isDark, onOpenNotes, onDragStart, i
           {editing && (
             <div className={`flex items-center gap-2 ${hasSubtasks ? 'pt-2 mt-2' : ''}`} style={{ borderTop: hasSubtasks ? `1px solid ${cardBorder}` : 'none' }}>
               <button type="button" onClick={handleAddSubtask} className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: newSubtask.trim() ? '#3b82f6' : (isDark ? '#374151' : '#e5e7eb'), color: newSubtask.trim() ? 'white' : textMuted }}><Plus className="w-4 h-4" /></button>
-              <input type="text" value={newSubtask} onChange={(e) => setNewSubtask(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newSubtask.trim()) handleAddSubtask(); }} placeholder="Add subtask..." className="flex-1 text-sm bg-transparent focus:outline-none" style={{ color: textPrimary }} />
+              <input id={`subtask-input-${task.id}`} type="text" value={newSubtask} onChange={(e) => setNewSubtask(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newSubtask.trim()) handleAddSubtask(); }} placeholder="Add subtask..." className="flex-1 text-sm bg-transparent focus:outline-none" style={{ color: textPrimary }} />
             </div>
           )}
         </div>
       )}
+      </div>{/* closes opacity wrapper */}
     </div>
   );
 }
 
-function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, isDark }) {
+function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, isDark, currentHour }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [title, setTitle] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [dueDate, setDueDate] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [noteDate, setNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
-  
+
   useEffect(() => { if (isOpen) { setActiveTab(defaultTab); setTitle(''); setSelectedTags([]); setDueDate(''); setNoteContent(''); setNoteDate(new Date().toISOString().split('T')[0]); } }, [isOpen, defaultTab]);
-  
+
   const handleSubmitTask = (e) => { e.preventDefault(); if (!title.trim()) return; onAddTask({ id: Date.now().toString(), title: title.trim(), status: STATUS.NOT_STARTED, tags: selectedTags, dueDate: dueDate || null, subtasks: [], notes: [] }); onClose(); };
   const handleSubmitNote = (e) => { e.preventDefault(); if (!noteContent.trim()) return; onAddNote({ id: Date.now().toString(), content: noteContent.trim(), date: noteDate, createdAt: new Date().toISOString() }); onClose(); };
-  
+
   if (!isOpen) return null;
-  
-  const modalBg = isDark ? '#1f2937' : '#ffffff';
-  const inputBg = isDark ? '#111827' : '#ffffff';
-  const inputBorder = isDark ? '#374151' : '#d1d5db';
-  const textPrimary = isDark ? '#f3f4f6' : '#111827';
-  const textSecondary = isDark ? '#9ca3af' : '#374151';
-  const tabBg = isDark ? '#374151' : '#f3f4f6';
-  const tabActiveBg = '#3b82f6';
-  
+
+  // Get time-based colors for gradient accent
+  const { colors } = getTimeColors(currentHour);
+  const accentGradient = `linear-gradient(135deg, ${colors[1]}, ${colors[2]})`;
+
+  // Darker modal with slight transparency
+  const modalBg = 'rgba(17, 24, 39, 0.95)';
+  const inputBg = 'rgba(31, 41, 55, 0.8)';
+  const inputBorder = 'rgba(75, 85, 99, 0.6)';
+  const textPrimary = '#f3f4f6';
+  const textSecondary = '#9ca3af';
+  const tabBg = 'rgba(55, 65, 81, 0.6)';
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60]" onClick={onClose}>
-      <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
-        <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}><h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Add New</h2><button onClick={onClose} style={{ color: textSecondary }}><X className="w-5 h-5" /></button></div>
+    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-[60] backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[90vh] overflow-y-auto backdrop-blur-md" style={{ backgroundColor: modalBg, border: '1px solid rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
+        <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
+          <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Add New</h2>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/10 transition-colors" style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
+        </div>
         <div className="p-4 pb-0">
           <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: tabBg }}>
-            <button onClick={() => setActiveTab('task')} className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors" style={{ backgroundColor: activeTab === 'task' ? tabActiveBg : 'transparent', color: activeTab === 'task' ? 'white' : textSecondary }}>Task</button>
-            <button onClick={() => setActiveTab('note')} className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors" style={{ backgroundColor: activeTab === 'note' ? tabActiveBg : 'transparent', color: activeTab === 'note' ? 'white' : textSecondary }}>Note</button>
+            <button onClick={() => setActiveTab('task')} className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors" style={{ background: activeTab === 'task' ? accentGradient : 'transparent', color: activeTab === 'task' ? 'white' : textSecondary }}>Task</button>
+            <button onClick={() => setActiveTab('note')} className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors" style={{ background: activeTab === 'note' ? accentGradient : 'transparent', color: activeTab === 'note' ? 'white' : textSecondary }}>Note</button>
           </div>
         </div>
         {activeTab === 'task' && (
@@ -802,14 +1141,14 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
             <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Task Title</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} placeholder="What do you want to accomplish?" autoFocus /></div>
             <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Due Date</label><input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} /></div>
             <div><label className="block text-sm font-medium mb-2" style={{ color: textSecondary }}>Tags</label><TagEditor selectedTags={selectedTags} onTagsChange={setSelectedTags} allTags={allTags} isDark={isDark} /></div>
-            <button type="submit" className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium">Add Task</button>
+            <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Task</button>
           </form>
         )}
         {activeTab === 'note' && (
           <form onSubmit={handleSubmitNote} className="p-4 space-y-4">
             <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Note</label><textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="What's on your mind?" rows={4} className="w-full px-3 py-2 rounded-lg resize-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus /></div>
             <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Date</label><input type="date" value={noteDate} onChange={(e) => setNoteDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} /></div>
-            <button type="submit" className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium">Add Note</button>
+            <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Note</button>
           </form>
         )}
       </div>
@@ -820,16 +1159,21 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
 // Dashboard Component
 function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, currentHour }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
-  const bgColor = isDark ? '#111827' : '#f9fafb';
-  const cardBg = isDark ? '#1f2937' : '#ffffff';
-  const textPrimary = isDark ? '#f3f4f6' : '#111827';
-  const textSecondary = isDark ? '#9ca3af' : '#6b7280';
-  const borderColor = isDark ? '#374151' : '#e5e7eb';
-  
-  const { gradient, darkText } = getTimeGradient(currentHour);
+
+  const { colors, darkText } = getTimeColors(currentHour);
   const greeting = getGreeting(Math.floor(currentHour));
-  
+
+  // Text colors that work on the gradient - high contrast for legibility
+  const textPrimary = darkText ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,1)';
+  const textSecondary = darkText ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
+  const textMuted = darkText ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
+
+  // Glass card styling - more opaque for better contrast
+  const cardBg = darkText ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.2)';
+  const cardBorder = darkText ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)';
+  const cardHover = darkText ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.24)';
+  const glowColor = darkText ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.1)';
+
   // Sort milestones: active first, then upcoming, then complete (newest first)
   const sortedMilestones = [...milestones].sort((a, b) => {
     const statusA = getMilestoneStatus(a.startDate, a.endDate);
@@ -838,104 +1182,173 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
     if (order[statusA] !== order[statusB]) return order[statusA] - order[statusB];
     return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
   });
-  
+
   const activeMilestones = sortedMilestones.filter(m => getMilestoneStatus(m.startDate, m.endDate) === 'active');
   const upcomingMilestones = sortedMilestones.filter(m => getMilestoneStatus(m.startDate, m.endDate) === 'upcoming');
   const completeMilestones = sortedMilestones.filter(m => getMilestoneStatus(m.startDate, m.endDate) === 'complete');
-  
-  const MilestoneCard = ({ milestone }) => {
+
+  // Single milestone row (used inside grouped cards)
+  const MilestoneRow = ({ milestone, showDivider }) => {
     const status = getMilestoneStatus(milestone.startDate, milestone.endDate);
     const tasks = milestone.tasks || [];
     const allItems = tasks.flatMap(t => [t, ...(t.subtasks || [])]);
     const completedItems = allItems.filter(i => i.status === STATUS.COMPLETE).length;
     const isComplete = status === 'complete';
-    
+
     return (
-      <button
-        onClick={() => onSelectMilestone(milestone.id)}
-        className="w-full p-4 rounded-xl text-left transition-all active:scale-[0.98]"
-        style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              {isComplete && <span className="text-sm">✓</span>}
-              <h3 className="font-semibold truncate" style={{ color: textPrimary }}>{milestone.title}</h3>
+      <>
+        <button
+          onClick={() => onSelectMilestone(milestone.id)}
+          className="milestone-row w-full p-4 text-left transition-colors"
+          style={{ '--row-hover': darkText ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)' }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                {isComplete && <span className="text-sm" style={{ color: textSecondary }}>✓</span>}
+                <h3 className="font-semibold truncate" style={{ color: textPrimary }}>{milestone.title}</h3>
+              </div>
+              <p className="text-sm mt-1" style={{ color: textSecondary }}>{formatDateRange(milestone.startDate, milestone.endDate)}</p>
+              <p className="text-xs mt-1.5" style={{ color: textMuted }}>
+                {completedItems}/{allItems.length} items {isComplete ? 'completed' : 'done'}
+              </p>
             </div>
-            <p className="text-sm mt-0.5" style={{ color: textSecondary }}>{formatDateRange(milestone.startDate, milestone.endDate)}</p>
-            <p className="text-xs mt-1" style={{ color: textSecondary }}>
-              {completedItems}/{allItems.length} items {isComplete ? 'completed' : 'done'}
-            </p>
+            <CircularProgress completed={completedItems} total={allItems.length} isDark={!darkText} />
           </div>
-          <CircularProgress completed={completedItems} total={allItems.length} isDark={isDark} />
-        </div>
-      </button>
+        </button>
+        {showDivider && <div style={{ height: '1px', backgroundColor: cardBorder }} />}
+      </>
     );
   };
-  
+
+  // Grouped card for multiple milestones, or single card for one
+  const MilestoneGroup = ({ milestones: groupMilestones }) => {
+    return (
+      <div
+        className="milestone-card rounded-2xl backdrop-blur-md overflow-hidden"
+        style={{
+          backgroundColor: cardBg,
+          border: `1px solid ${cardBorder}`,
+          '--glow-color': glowColor,
+          '--card-bg-hover': cardHover
+        }}
+      >
+        {groupMilestones.map((m, i) => (
+          <MilestoneRow key={m.id} milestone={m} showDivider={i < groupMilestones.length - 1} />
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: bgColor }}>
-      {/* Header */}
-      <div className="px-4 pt-6 pb-6" style={{ background: gradient }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{greeting}</p>
-            <h1 className="text-2xl font-bold mt-0.5" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>Your Milestones</h1>
-            <p className="text-sm mt-1" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>
-              {milestones.length} milestone{milestones.length !== 1 ? 's' : ''} · {activeMilestones.length} active
-            </p>
+    <div className="min-h-screen relative">
+      {/* Card and FAB hover styles */}
+      <style>{`
+        .milestone-card {
+          transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .milestone-card:hover {
+          background-color: var(--card-bg-hover) !important;
+          box-shadow: 0 2px 12px var(--glow-color);
+        }
+        .milestone-card:active {
+          transform: scale(0.98);
+        }
+        .milestone-row:hover {
+          background-color: var(--row-hover);
+        }
+        .milestone-row:active {
+          background-color: var(--row-hover);
+        }
+        .fab-button {
+          box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 8px 40px rgba(0,0,0,0.15);
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .fab-button:hover {
+          background-color: rgba(255,255,255,0.35) !important;
+          box-shadow: 0 6px 24px rgba(0,0,0,0.3), 0 12px 48px var(--fab-glow);
+        }
+        .fab-button:active {
+          transform: scale(0.92);
+          box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+      `}</style>
+
+      {/* All content floats above the gradient */}
+      <div className="relative z-10 min-h-screen pb-8 px-5" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
+        {/* Header */}
+        <div className="pb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <FramedLogo color={textPrimary} size={34} />
+            <span className="text-2xl font-bold tracking-tight" style={{ color: textPrimary, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
           </div>
+          <p className="text-sm font-medium" style={{ color: textSecondary }}>{greeting}</p>
+          <p className="text-sm mt-2" style={{ color: textMuted }}>
+            {milestones.length} milestone{milestones.length !== 1 ? 's' : ''} · {activeMilestones.length} active
+          </p>
         </div>
-      </div>
-      
-      {/* Content */}
-      <div className="px-4 py-4 pb-24 space-y-6">
-        {milestones.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb' }}>
-              <Calendar className="w-8 h-8" style={{ color: textSecondary }} />
+
+        {/* Content */}
+        <div className="px-5 pb-28 space-y-8">
+          {milestones.length === 0 ? (
+            <div className="text-center py-16">
+              <div
+                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-md"
+                style={{ backgroundColor: cardBg }}
+              >
+                <Calendar className="w-8 h-8" style={{ color: textSecondary }} />
+              </div>
+              <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>No milestones yet</h2>
+              <p className="text-sm mt-2 mb-6" style={{ color: textSecondary }}>Create your first milestone to start tracking goals</p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-6 py-3 rounded-xl font-medium backdrop-blur-md transition-all active:scale-[0.98]"
+                style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: textPrimary, border: `1px solid ${cardBorder}` }}
+              >
+                Create Milestone
+              </button>
             </div>
-            <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>No milestones yet</h2>
-            <p className="text-sm mt-1 mb-6" style={{ color: textSecondary }}>Create your first milestone to start tracking goals</p>
-            <button onClick={() => setShowCreateModal(true)} className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium">Create Milestone</button>
-          </div>
-        ) : (
-          <>
-            {activeMilestones.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: textSecondary }}>Active</h2>
-                <div className="space-y-3">
-                  {activeMilestones.map(m => <MilestoneCard key={m.id} milestone={m} />)}
+          ) : (
+            <>
+              {activeMilestones.length > 0 && (
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Active</h2>
+                  <MilestoneGroup milestones={activeMilestones} />
                 </div>
-              </div>
-            )}
-            
-            {upcomingMilestones.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: textSecondary }}>Upcoming</h2>
-                <div className="space-y-3">
-                  {upcomingMilestones.map(m => <MilestoneCard key={m.id} milestone={m} />)}
+              )}
+
+              {upcomingMilestones.length > 0 && (
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Upcoming</h2>
+                  <MilestoneGroup milestones={upcomingMilestones} />
                 </div>
-              </div>
-            )}
-            
-            {completeMilestones.length > 0 && (
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: textSecondary }}>Completed</h2>
-                <div className="space-y-3">
-                  {completeMilestones.map(m => <MilestoneCard key={m.id} milestone={m} />)}
+              )}
+
+              {completeMilestones.length > 0 && (
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Completed</h2>
+                  <MilestoneGroup milestones={completeMilestones} />
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
+        </div>
+
+        {/* FAB */}
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.25)',
+            color: textPrimary,
+            border: `1px solid ${cardBorder}`,
+            '--fab-glow': darkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)'
+          }}
+        >
+          <Plus className="w-6 h-6" />
+        </button>
       </div>
-      
-      {/* FAB */}
-      <button onClick={() => setShowCreateModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-30">
-        <Plus className="w-6 h-6" />
-      </button>
-      
+
       <CreateMilestoneModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={onCreateMilestone} isDark={isDark} />
     </div>
   );
@@ -952,10 +1365,19 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
   const [showJournal, setShowJournal] = useState(false);
   const [notesTask, setNotesTask] = useState(null);
   const [savedSummary, setSavedSummary] = useState(() => localStorage.getItem(LOCAL_SUMMARY_PREFIX + milestone.id) || '');
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editNoteContent, setEditNoteContent] = useState('');
+  const [editNoteDate, setEditNoteDate] = useState('');
   
   const [draggingId, setDraggingId] = useState(null);
-  const [dropTargetId, setDropTargetId] = useState(null);
+  const [dropIndex, setDropIndex] = useState(null);
   const taskListRef = useRef(null);
+  const draggedTaskHeight = useRef(0);
+  const dragStartY = useRef(0);
+  const draggedElRef = useRef(null);
+  const originalPositions = useRef([]); // Store original Y positions at drag start
+  const dragStartIndex = useRef(0);
   
   const tasks = milestone.tasks || [];
   const standaloneNotes = milestone.standaloneNotes || [];
@@ -972,13 +1394,23 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
   const daysLeft = Math.ceil((endDate - today) / 86400000);
   const isMilestoneComplete = today > endDate;
   
+  const prevAllTagsRef = useRef([]);
   useEffect(() => {
-    if (allTags.length > 0 && selectedTags.length === 0) setSelectedTags([...allTags]);
-    const newTags = allTags.filter(t => !selectedTags.includes(t));
-    if (newTags.length > 0) setSelectedTags(prev => [...prev, ...newTags]);
+    // Initialize with all tags on first load
+    if (selectedTags.length === 0 && allTags.length > 0) {
+      setSelectedTags([...allTags]);
+      prevAllTagsRef.current = [...allTags];
+      return;
+    }
+    // Only add genuinely NEW tags (not previously deselected ones)
+    const prevTags = prevAllTagsRef.current;
+    const newTags = allTags.filter(t => !prevTags.includes(t));
+    if (newTags.length > 0) {
+      setSelectedTags(prev => [...prev, ...newTags]);
+    }
+    prevAllTagsRef.current = [...allTags];
   }, [allTags.join(',')]);
-  
-  const { gradient, darkText } = isMilestoneComplete ? getMilestoneCompleteGradient() : getTimeGradient(currentHour);
+
   const greeting = getGreeting(Math.floor(currentHour));
   const todayFormatted = formatToday();
   
@@ -986,6 +1418,12 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
     const newTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
     onUpdateMilestone({ ...milestone, tasks: newTasks });
     if (notesTask && notesTask.id === updatedTask.id) setNotesTask(updatedTask);
+  };
+
+  const handleDeleteTask = (taskId) => {
+    const newTasks = tasks.filter(t => t.id !== taskId);
+    onUpdateMilestone({ ...milestone, tasks: newTasks });
+    if (editingTaskId === taskId) setEditingTaskId(null);
   };
   
   const handleAddTask = (task) => {
@@ -1010,45 +1448,188 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
   };
   
   const handleOpenAddModal = (defaultTab) => { setAddModalDefaultTab(defaultTab); setShowAddModal(true); };
-  
+
+  const handleRenameTag = (oldName, newName) => {
+    if (!newName.trim() || oldName === newName) return;
+    const newTasks = tasks.map(t => ({
+      ...t,
+      tags: (t.tags || []).map(tag => tag === oldName ? newName.trim() : tag)
+    }));
+    onUpdateMilestone({ ...milestone, tasks: newTasks });
+    setSelectedTags(prev => prev.map(tag => tag === oldName ? newName.trim() : tag));
+  };
+
+  const handleDeleteTag = (tagName) => {
+    const newTasks = tasks.map(t => ({
+      ...t,
+      tags: (t.tags || []).filter(tag => tag !== tagName)
+    }));
+    onUpdateMilestone({ ...milestone, tasks: newTasks });
+    setSelectedTags(prev => prev.filter(tag => tag !== tagName));
+  };
+
+  // Notes/Journal data and handlers
+  const taskNotes = tasks.flatMap(task => (task.notes || []).map(note => ({ ...note, type: 'task', taskId: task.id, taskTitle: task.title, taskTags: task.tags })));
+  const standaloneWithType = standaloneNotes.map(note => ({ ...note, type: 'standalone' }));
+  const allNotes = [...taskNotes, ...standaloneWithType];
+  const sortedNotes = allNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const groupedByDate = sortedNotes.reduce((acc, note) => { const dateKey = note.date; if (!acc[dateKey]) acc[dateKey] = []; acc[dateKey].push(note); return acc; }, {});
+  const dateKeys = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+
+  const handleStartEditNote = (note) => { setEditingNoteId(note.id); setEditNoteContent(note.content); setEditNoteDate(note.date); };
+  const handleSaveEditNote = (note) => {
+    if (note.type === 'standalone') { handleUpdateStandaloneNotes(standaloneNotes.map(n => n.id === note.id ? { ...n, content: editNoteContent, date: editNoteDate } : n)); }
+    else { const task = tasks.find(t => t.id === note.taskId); if (task) handleUpdateTask({ ...task, notes: task.notes.map(n => n.id === note.id ? { ...n, content: editNoteContent, date: editNoteDate } : n) }); }
+    setEditingNoteId(null);
+  };
+  const handleDeleteNote = (note) => {
+    if (note.type === 'standalone') { handleUpdateStandaloneNotes(standaloneNotes.filter(n => n.id !== note.id)); }
+    else { const task = tasks.find(t => t.id === note.taskId); if (task) handleUpdateTask({ ...task, notes: task.notes.filter(n => n.id !== note.id) }); }
+  };
+
+  // Filtered tasks - computed before drag handlers that depend on it
+  const filteredTasks = useMemo(() => {
+    let result = tasks;
+    if (filterDate === DATE_FILTERS.TODAY) result = result.filter(t => isToday(t.dueDate));
+    if (selectedTags.length < allTags.length && selectedTags.length > 0) {
+      result = result.filter(t => (t.tags || []).some(tag => selectedTags.includes(tag)) || !(t.tags || []).length);
+    }
+    return result;
+  }, [tasks, filterDate, selectedTags, allTags]);
+
   // Drag handlers
-  const handleDragStart = useCallback((taskId) => { setDraggingId(taskId); if (navigator.vibrate) navigator.vibrate(50); }, []);
-  
+  const handleDragStart = useCallback((taskId, e) => {
+    const taskElements = taskListRef.current?.querySelectorAll('[data-task-id]');
+    if (!taskElements) return;
+
+    // Store original positions of ALL items before any transforms
+    const positions = [];
+    taskElements.forEach((el, i) => {
+      const rect = el.getBoundingClientRect();
+      positions.push({
+        id: el.getAttribute('data-task-id'),
+        top: rect.top,
+        bottom: rect.bottom,
+        height: rect.height,
+        midY: rect.top + rect.height / 2
+      });
+    });
+    originalPositions.current = positions;
+
+    // Store the element ref for direct DOM manipulation
+    const el = taskListRef.current?.querySelector(`[data-task-id="${taskId}"]`);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      draggedTaskHeight.current = rect.height + 8; // +8 for gap
+      draggedElRef.current = el;
+    }
+
+    // Store initial cursor position and drag index
+    const clientY = e?.touches ? e.touches[0].clientY : (e?.clientY || 0);
+    dragStartY.current = clientY;
+    const dragIdx = filteredTasks.findIndex(t => t.id === taskId);
+    dragStartIndex.current = dragIdx;
+
+    setDraggingId(taskId);
+    setDropIndex(dragIdx);
+    if (navigator.vibrate) navigator.vibrate(50);
+  }, [filteredTasks]);
+
   const handleDragMove = useCallback((e) => {
     if (!draggingId || !taskListRef.current) return;
     if (e.cancelable) e.preventDefault();
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const taskElements = taskListRef.current.querySelectorAll('[data-task-id]');
-    for (const el of taskElements) {
-      const rect = el.getBoundingClientRect();
-      const midY = rect.top + rect.height / 2;
-      if (clientY < midY) {
-        const targetId = el.getAttribute('data-task-id');
-        if (targetId !== draggingId) setDropTargetId(targetId);
-        return;
+
+    // Directly update dragged element transform for instant response
+    const offset = clientY - dragStartY.current;
+    if (draggedElRef.current) {
+      draggedElRef.current.style.transform = `translateY(${offset}px)`;
+    }
+
+    // Use original positions to find drop index
+    const positions = originalPositions.current;
+    const startIdx = dragStartIndex.current;
+
+    // Calculate drop index based on which item's midpoint we've crossed
+    let newDropIndex = startIdx;
+
+    // Check items below the start position (dragging down)
+    for (let i = startIdx + 1; i < positions.length; i++) {
+      if (clientY > positions[i].midY) {
+        newDropIndex = i;
+      } else {
+        break;
       }
     }
-    if (taskElements.length > 0) {
-      const lastId = taskElements[taskElements.length - 1].getAttribute('data-task-id');
-      if (lastId !== draggingId) setDropTargetId(lastId);
+
+    // Check items above the start position (dragging up)
+    for (let i = startIdx - 1; i >= 0; i--) {
+      if (clientY < positions[i].midY) {
+        newDropIndex = i;
+      } else {
+        break;
+      }
     }
-  }, [draggingId]);
-  
+
+    // Only update state if drop index changed
+    if (newDropIndex !== dropIndex) {
+      setDropIndex(newDropIndex);
+    }
+  }, [draggingId, dropIndex]);
+
   const handleDragEnd = useCallback(() => {
-    if (draggingId && dropTargetId && draggingId !== dropTargetId) {
-      const newTasks = [...tasks];
-      const dragIndex = newTasks.findIndex(t => t.id === draggingId);
-      const dropIndex = newTasks.findIndex(t => t.id === dropTargetId);
-      if (dragIndex !== -1 && dropIndex !== -1) {
-        const [draggedTask] = newTasks.splice(dragIndex, 1);
-        newTasks.splice(dropIndex, 0, draggedTask);
-        onUpdateMilestone({ ...milestone, tasks: newTasks });
+    if (draggingId && dropIndex !== null) {
+      const dragIndex = filteredTasks.findIndex(t => t.id === draggingId);
+      if (dragIndex !== -1 && dropIndex !== dragIndex) {
+        const newTasks = [...tasks];
+        const originalDragIndex = newTasks.findIndex(t => t.id === draggingId);
+        // Map dropIndex from filtered to original tasks
+        const targetTask = filteredTasks[dropIndex];
+        const originalDropIndex = targetTask ? newTasks.findIndex(t => t.id === targetTask.id) : newTasks.length - 1;
+
+        if (originalDragIndex !== -1 && originalDropIndex !== -1) {
+          const [draggedTask] = newTasks.splice(originalDragIndex, 1);
+          const adjustedDropIndex = originalDropIndex > originalDragIndex ? originalDropIndex : originalDropIndex;
+          newTasks.splice(adjustedDropIndex, 0, draggedTask);
+          onUpdateMilestone({ ...milestone, tasks: newTasks });
+        }
       }
     }
+    // Reset the dragged element's transform and clean up refs
+    if (draggedElRef.current) {
+      draggedElRef.current.style.transform = '';
+      draggedElRef.current = null;
+    }
+    originalPositions.current = [];
     setDraggingId(null);
-    setDropTargetId(null);
-  }, [draggingId, dropTargetId, tasks, milestone, onUpdateMilestone]);
-  
+    setDropIndex(null);
+  }, [draggingId, dropIndex, tasks, filteredTasks, milestone, onUpdateMilestone]);
+
+  // Calculate shift transform for each task based on drag position
+  const getTaskShiftStyle = useCallback((taskId, taskIndex) => {
+    if (!draggingId || draggingId === taskId) return {};
+    const dragIndex = filteredTasks.findIndex(t => t.id === draggingId);
+    if (dragIndex === -1 || dropIndex === null) return {};
+
+    const height = draggedTaskHeight.current;
+
+    // If dragging down (dropIndex > dragIndex)
+    if (dropIndex > dragIndex) {
+      // Items between drag and drop should shift up
+      if (taskIndex > dragIndex && taskIndex <= dropIndex) {
+        return { transform: `translateY(-${height}px)` };
+      }
+    }
+    // If dragging up (dropIndex < dragIndex)
+    else if (dropIndex < dragIndex) {
+      // Items between drop and drag should shift down
+      if (taskIndex >= dropIndex && taskIndex < dragIndex) {
+        return { transform: `translateY(${height}px)` };
+      }
+    }
+    return {};
+  }, [draggingId, dropIndex, filteredTasks]);
+
   useEffect(() => {
     if (draggingId) {
       const handleMove = (e) => handleDragMove(e);
@@ -1057,114 +1638,253 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
       document.addEventListener('mouseup', handleEnd);
       document.addEventListener('touchmove', handleMove, { passive: false });
       document.addEventListener('touchend', handleEnd);
+      // Prevent scrolling and text selection during drag
       document.body.style.overflow = 'hidden';
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
       return () => {
         document.removeEventListener('mousemove', handleMove);
         document.removeEventListener('mouseup', handleEnd);
         document.removeEventListener('touchmove', handleMove);
         document.removeEventListener('touchend', handleEnd);
         document.body.style.overflow = '';
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
       };
     }
   }, [draggingId, handleDragMove, handleDragEnd]);
-  
-  let filteredTasks = tasks;
-  if (filterDate === DATE_FILTERS.TODAY) filteredTasks = filteredTasks.filter(t => isToday(t.dueDate));
-  if (selectedTags.length < allTags.length && selectedTags.length > 0) filteredTasks = filteredTasks.filter(t => (t.tags || []).some(tag => selectedTags.includes(tag)) || !(t.tags || []).length);
-  
+
   const todayCount = tasks.filter(t => isToday(t.dueDate) && t.status !== STATUS.COMPLETE).length;
   const allItems = tasks.flatMap(t => [t, ...(t.subtasks || [])]);
   const completedItems = allItems.filter(i => i.status === STATUS.COMPLETE).length;
   const isTagFiltering = selectedTags.length < allTags.length && selectedTags.length > 0;
   
+  // Colors for the overlay and content
+  const { colors, darkText: timeBasedDarkText } = getTimeColors(currentHour);
+  const textPrimary = timeBasedDarkText ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,1)';
+  const textSecondaryOverlay = timeBasedDarkText ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
+  const textMuted = timeBasedDarkText ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
+  const overlayBg = timeBasedDarkText ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.25)';
+  const cardBg = timeBasedDarkText ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.2)';
+  const cardBorder = timeBasedDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)';
+
+  // Legacy colors for task items (keep existing filter styling)
   const bgColor = isDark ? '#111827' : '#f9fafb';
   const filterBg = isDark ? '#1f2937' : '#f3f4f6';
   const filterActiveBg = isDark ? '#f3f4f6' : '#111827';
   const filterText = isDark ? '#d1d5db' : '#374151';
   const filterActiveText = isDark ? '#111827' : '#ffffff';
   const textSecondary = isDark ? '#9ca3af' : '#6b7280';
-  
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: bgColor }}>
-      {showJournal && (
-        <JournalView tasks={tasks} standaloneNotes={standaloneNotes} onUpdateTask={handleUpdateTask} onUpdateStandaloneNotes={handleUpdateStandaloneNotes} onClose={() => setShowJournal(false)} onOpenAddModal={() => handleOpenAddModal('note')} isDark={isDark} goal={goal} />
-      )}
-      
-      <div className="px-4 pt-6 pb-6" style={{ background: gradient }}>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <button onClick={onBack} className="p-2 -ml-2 rounded-full" style={{ color: darkText ? 'rgba(0,0,0,0.7)' : 'white' }}>
-              <Home className="w-5 h-5" />
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                {isMilestoneComplete ? (
-                  <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.9)' }}>🎉 Milestone complete</p>
-                ) : (
-                  <p className="text-sm font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{greeting}</p>
-                )}
-              </div>
-              <h1 className="text-2xl font-bold mt-0.5" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>
-                {isMilestoneComplete ? milestone.title : todayFormatted}
-              </h1>
-              <p className="text-sm mt-1" style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>
-                {isMilestoneComplete ? `${new Date(milestone.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${new Date(milestone.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · Finished!` : `${milestone.title} · ${new Date(milestone.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${new Date(milestone.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`}
-              </p>
+    <div className="min-h-[calc(100vh-56px)] relative" style={{ backgroundColor: overlayBg }}>
+      {/* FAB hover styles */}
+      <style>{`
+        .fab-button {
+          box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 8px 40px rgba(0,0,0,0.15);
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .fab-button:hover {
+          background-color: rgba(255,255,255,0.35) !important;
+          box-shadow: 0 6px 24px rgba(0,0,0,0.3), 0 12px 48px var(--fab-glow);
+        }
+        .fab-button:active {
+          transform: scale(0.92);
+          box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+      `}</style>
+
+      {/* All content */}
+      <div className="relative">
+        {/* Header */}
+        <div className="px-4 pt-4 pb-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowSettingsModal(true)} className="text-left">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold" style={{ color: textPrimary }}>
+                    {milestone.title}
+                  </h1>
+                  <Pencil className="w-4 h-4" style={{ color: textMuted, opacity: 0.5, transform: 'translateY(2px)' }} />
+                </div>
+                <p className="text-sm mt-1" style={{ color: textSecondaryOverlay }}>
+                  {new Date(milestone.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – {new Date(milestone.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}{isMilestoneComplete && ' · Finished!'}
+                </p>
+              </button>
+            </div>
+            <CircularCountdown daysLeft={daysLeft} totalDays={totalDays} darkText={timeBasedDarkText} isComplete={isMilestoneComplete} />
+          </div>
+          <div className="mt-5">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-medium" style={{ color: textPrimary }}>{isMilestoneComplete ? 'Final Progress' : 'Overall Progress'}</span>
+              <span style={{ color: textSecondaryOverlay }}>{completedItems}/{allItems.length}</span>
+            </div>
+            <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)' }}>
+              <div className="h-full transition-all" style={{ width: `${allItems.length ? (completedItems / allItems.length) * 100 : 0}%`, backgroundColor: timeBasedDarkText ? 'rgba(0,0,0,0.7)' : 'white' }} />
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <CircularCountdown daysLeft={daysLeft} totalDays={totalDays} darkText={darkText} isComplete={isMilestoneComplete} />
-            <button onClick={() => setShowJournal(true)} className="relative" style={{ color: darkText ? 'rgba(0,0,0,0.7)' : 'white' }}>
-              <BookOpen className="w-5 h-5" />
-              {totalNotes > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full text-xs text-white flex items-center justify-center font-medium">{totalNotes > 9 ? '9+' : totalNotes}</span>}
-            </button>
-            <button onClick={() => setShowSettingsModal(true)} style={{ color: darkText ? 'rgba(0,0,0,0.7)' : 'white' }}><Settings className="w-5 h-5" /></button>
-          </div>
         </div>
-        <div className="mt-5">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium" style={{ color: darkText ? 'rgba(0,0,0,0.8)' : 'white' }}>{isMilestoneComplete ? 'Final Progress' : 'Overall Progress'}</span>
-            <span style={{ color: darkText ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }}>{completedItems}/{allItems.length}</span>
+
+        {isMilestoneComplete && (
+          <div className="px-4 mt-4">
+            <MilestoneSummary tasks={tasks} standaloneNotes={standaloneNotes} goal={goal} isDark={isDark} savedSummary={savedSummary} onSaveSummary={handleSaveSummary} />
           </div>
-          <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: darkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.25)' }}>
-            <div className="h-full transition-all" style={{ width: `${allItems.length ? (completedItems / allItems.length) * 100 : 0}%`, backgroundColor: darkText ? 'rgba(0,0,0,0.7)' : 'white' }} />
-          </div>
-        </div>
-      </div>
-      
-      {isMilestoneComplete && (
+        )}
+
+        {/* Filters - use glass morphism style */}
         <div className="px-4 mt-4">
-          <MilestoneSummary tasks={tasks} standaloneNotes={standaloneNotes} goal={goal} isDark={isDark} savedSummary={savedSummary} onSaveSummary={handleSaveSummary} />
-        </div>
-      )}
-      
-      <div className="px-4 mt-4">
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-          {isMilestoneComplete ? (
-            <button onClick={() => setFilterDate(DATE_FILTERS.ALL)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap" style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? filterActiveBg : filterBg, color: filterDate === DATE_FILTERS.ALL ? filterActiveText : filterText }}>All Tasks</button>
-          ) : (
-            <>
-              <button onClick={() => setFilterDate(DATE_FILTERS.ALL)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap" style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? filterActiveBg : filterBg, color: filterDate === DATE_FILTERS.ALL ? filterActiveText : filterText }}>All</button>
-              <button onClick={() => setFilterDate(DATE_FILTERS.TODAY)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5" style={{ backgroundColor: filterDate === DATE_FILTERS.TODAY ? filterActiveBg : filterBg, color: filterDate === DATE_FILTERS.TODAY ? filterActiveText : filterText }}>Today{todayCount > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ backgroundColor: filterDate === DATE_FILTERS.TODAY ? (isDark ? '#374151' : '#e5e7eb') : '#3b82f6', color: filterDate === DATE_FILTERS.TODAY ? filterText : 'white' }}>{todayCount}</span>}</button>
-            </>
-          )}
-          <button onClick={() => setShowTagsModal(true)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5" style={{ backgroundColor: isTagFiltering ? filterActiveBg : filterBg, color: isTagFiltering ? filterActiveText : filterText }}><Tag className="w-3.5 h-3.5" />Tags{isTagFiltering && <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: filterText }}>{selectedTags.length}</span>}</button>
-        </div>
-      </div>
-      
-      <div className="px-4 mt-4 pb-24 space-y-2" ref={taskListRef}>
-        {filteredTasks.map(task => (
-          <div key={task.id} data-task-id={task.id}>
-            <TaskItem task={task} onUpdate={handleUpdateTask} allTags={allTags} isDark={isDark} onOpenNotes={setNotesTask} onDragStart={handleDragStart} isDragging={draggingId === task.id} isDropTarget={dropTargetId === task.id} isMilestoneComplete={isMilestoneComplete} />
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-2 -mb-2">
+              {isMilestoneComplete ? (
+                <button onClick={() => setFilterDate(DATE_FILTERS.ALL)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap backdrop-blur-md" style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? cardBg : 'rgba(255,255,255,0.1)', color: textPrimary, border: `1px solid ${cardBorder}` }}>All Tasks</button>
+              ) : (
+                <>
+                  <button onClick={() => setFilterDate(DATE_FILTERS.ALL)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap backdrop-blur-md" style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? cardBg : 'rgba(255,255,255,0.1)', color: textPrimary, border: `1px solid ${cardBorder}` }}>All</button>
+                  <button onClick={() => setFilterDate(DATE_FILTERS.TODAY)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5 backdrop-blur-md" style={{ backgroundColor: filterDate === DATE_FILTERS.TODAY ? cardBg : 'rgba(255,255,255,0.1)', color: textPrimary, border: `1px solid ${cardBorder}` }}>Today{todayCount > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs bg-blue-500 text-white">{todayCount}</span>}</button>
+                </>
+              )}
+              <button onClick={() => setShowTagsModal(true)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1.5 backdrop-blur-md" style={{ backgroundColor: isTagFiltering ? cardBg : 'rgba(255,255,255,0.1)', color: textPrimary, border: `1px solid ${cardBorder}` }}><Tag className="w-3.5 h-3.5" />Tags{isTagFiltering && <span className="px-1.5 py-0.5 rounded-full text-xs" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: textPrimary }}>{selectedTags.length}/{allTags.length}</span>}</button>
+            </div>
+            <div className="flex rounded-full backdrop-blur-md flex-shrink-0 p-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)', border: `1px solid ${cardBorder}` }}>
+              <button
+                onClick={() => setShowJournal(false)}
+                className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
+                style={{ backgroundColor: !showJournal ? cardBg : 'transparent', color: !showJournal ? textPrimary : textSecondaryOverlay }}
+              >
+                <Check className="w-3.5 h-3.5" />
+                Tasks
+              </button>
+              <button
+                onClick={() => setShowJournal(true)}
+                className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
+                style={{ backgroundColor: showJournal ? cardBg : 'transparent', color: showJournal ? textPrimary : textSecondaryOverlay }}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                Notes
+                {totalNotes > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs bg-blue-500 text-white">{totalNotes > 9 ? '9+' : totalNotes}</span>}
+              </button>
+            </div>
           </div>
-        ))}
-        {!filteredTasks.length && <div className="text-center py-12" style={{ color: textSecondary }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
+          {isTagFiltering && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {selectedTags.map(tag => (
+                <span key={tag} className="inline-flex items-center gap-1 text-xs py-0.5 pl-2 pr-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: textSecondaryOverlay }}>
+                  {tag}
+                  <button onClick={() => setSelectedTags(prev => prev.filter(t => t !== tag))} className="p-0.5 rounded-full hover:bg-white/10">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Task list / Notes list with fade transition */}
+        <div className="px-4 mt-4 pb-24 relative">
+          {/* Tasks */}
+          <div
+            className="space-y-2 transition-opacity duration-200"
+            style={{ opacity: showJournal ? 0 : 1, pointerEvents: showJournal ? 'none' : 'auto', position: showJournal ? 'absolute' : 'relative', inset: showJournal ? 0 : 'auto' }}
+            ref={taskListRef}
+          >
+            {filteredTasks.map((task, index) => {
+              const isDragged = draggingId === task.id;
+              return (
+                <div
+                  key={task.id}
+                  data-task-id={task.id}
+                  style={{
+                    transition: isDragged ? 'none' : (draggingId ? 'transform 0.12s cubic-bezier(0.2, 0, 0, 1)' : 'none'),
+                    ...(!isDragged && getTaskShiftStyle(task.id, index)),
+                    zIndex: isDragged ? 50 : 1,
+                    position: 'relative',
+                    willChange: draggingId ? 'transform' : 'auto'
+                  }}
+                >
+                  <TaskItem task={task} onUpdate={handleUpdateTask} onDelete={handleDeleteTask} allTags={allTags} isDark={isDark} onOpenNotes={setNotesTask} onDragStart={handleDragStart} isDragging={isDragged} isMilestoneComplete={isMilestoneComplete} isEditing={editingTaskId === task.id} onSetEditing={setEditingTaskId} />
+                </div>
+              );
+            })}
+            {!filteredTasks.length && <div className="text-center py-12" style={{ color: textSecondaryOverlay }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
+          </div>
+
+          {/* Notes */}
+          <div
+            className="space-y-4 transition-opacity duration-200"
+            style={{ opacity: showJournal ? 1 : 0, pointerEvents: showJournal ? 'auto' : 'none', position: showJournal ? 'relative' : 'absolute', inset: showJournal ? 'auto' : 0 }}
+          >
+            {dateKeys.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="w-10 h-10 mx-auto mb-3" style={{ color: textSecondaryOverlay, opacity: 0.5 }} />
+                <p className="text-sm" style={{ color: textSecondaryOverlay }}>No notes yet</p>
+              </div>
+            ) : (
+              dateKeys.map(dateKey => (
+                <div key={dateKey}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: textSecondaryOverlay }}>{formatNoteDateFull(dateKey)}</h3>
+                  </div>
+                  <div className="ml-3 pl-3 space-y-2" style={{ borderLeft: `2px solid ${cardBorder}` }}>
+                    {groupedByDate[dateKey].map(note => (
+                      <div
+                        key={note.id}
+                        className="p-3 rounded-xl backdrop-blur-md cursor-pointer"
+                        style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}` }}
+                        onClick={() => { if (editingNoteId !== note.id) handleStartEditNote(note); }}
+                      >
+                        {editingNoteId === note.id ? (
+                          <div className="space-y-3" onClick={e => e.stopPropagation()}>
+                            {/* Top row - actions */}
+                            <div className="flex items-center justify-between min-h-[32px] -mt-1">
+                              <button onClick={() => handleDeleteNote(note)} className="text-xs px-2 py-1 text-red-400">Delete</button>
+                              <button onClick={() => handleSaveEditNote(note)} className="text-sm text-blue-400 font-medium px-3 py-1 rounded-lg active:bg-blue-500/10">Done</button>
+                            </div>
+                            {/* Content input */}
+                            <textarea
+                              value={editNoteContent}
+                              onChange={(e) => setEditNoteContent(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Escape') setEditingNoteId(null); }}
+                              rows={4}
+                              className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+                              style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid #3b82f6', color: textPrimary, minHeight: '100px' }}
+                              autoFocus
+                            />
+                            {/* Date and tag row */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <input type="date" value={editNoteDate} onChange={(e) => setEditNoteDate(e.target.value)} className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'rgba(0,0,0,0.2)', border: `1px solid ${cardBorder}`, color: textPrimary, colorScheme: 'dark' }} />
+                              {note.type === 'task' && (
+                                <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: textSecondaryOverlay }}>{note.taskTitle}</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm" style={{ color: textPrimary }}>{note.content}</p>
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              {note.type === 'task' ? (
+                                <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: textSecondaryOverlay }}>{note.taskTitle}</span>
+                              ) : (
+                                <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'rgba(59,130,246,0.2)', color: '#93c5fd' }}>Journal</span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* FAB */}
+        <button onClick={() => handleOpenAddModal(showJournal ? 'note' : 'task')} className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md" style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: textPrimary, border: `1px solid ${cardBorder}`, '--fab-glow': timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)' }}><Plus className="w-6 h-6" /></button>
       </div>
       
-      <button onClick={() => handleOpenAddModal('task')} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-30"><Plus className="w-6 h-6" /></button>
-      
-      <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} isDark={isDark} />
-      <AddModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} defaultTab={addModalDefaultTab} onAddTask={handleAddTask} onAddNote={handleAddNote} allTags={allTags} isDark={isDark} />
+      <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} onRenameTag={handleRenameTag} onDeleteTag={handleDeleteTag} isDark={isDark} />
+      <AddModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} defaultTab={addModalDefaultTab} onAddTask={handleAddTask} onAddNote={handleAddNote} allTags={allTags} isDark={isDark} currentHour={currentHour} />
       <GoalSettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} goal={goal} onSave={handleGoalSave} isDark={isDark} />
       <NotesModal isOpen={!!notesTask} onClose={() => setNotesTask(null)} task={notesTask} onUpdateTask={handleUpdateTask} isDark={isDark} />
     </div>
@@ -1177,6 +1897,10 @@ export default function VacationTracker() {
   const [loading, setLoading] = useState(true);
   const [isDark, setIsDark] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
+
+  // Transition state
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [displayView, setDisplayView] = useState({ view: VIEWS.DASHBOARD });
   
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -1208,12 +1932,14 @@ export default function VacationTracker() {
         const exists = savedMs.some(m => m.id === parsed.milestoneId);
         if (exists) {
           setCurrentView(parsed);
+          setDisplayView(parsed);
         }
       } else {
         setCurrentView(parsed);
+        setDisplayView(parsed);
       }
     }
-    
+
     setLoading(false);
   }, []);
   
@@ -1231,17 +1957,31 @@ export default function VacationTracker() {
     }
   }, [currentView, loading]);
   
+  // Handle view transitions with fade
+  const navigateTo = useCallback((newView) => {
+    setIsTransitioning(true);
+    // Wait for fade out, then switch view
+    setTimeout(() => {
+      setDisplayView(newView);
+      setCurrentView(newView);
+      // Small delay then fade in
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 50);
+    }, 300);
+  }, []);
+
   const handleSelectMilestone = (milestoneId) => {
-    setCurrentView({ view: VIEWS.MILESTONE, milestoneId });
+    navigateTo({ view: VIEWS.MILESTONE, milestoneId });
   };
-  
+
   const handleBackToDashboard = () => {
-    setCurrentView({ view: VIEWS.DASHBOARD });
+    navigateTo({ view: VIEWS.DASHBOARD });
   };
-  
+
   const handleCreateMilestone = (newMilestone) => {
     setMilestones([...milestones, newMilestone]);
-    setCurrentView({ view: VIEWS.MILESTONE, milestoneId: newMilestone.id });
+    navigateTo({ view: VIEWS.MILESTONE, milestoneId: newMilestone.id });
   };
   
   const handleUpdateMilestone = (updatedMilestone) => {
@@ -1249,32 +1989,75 @@ export default function VacationTracker() {
   };
   
   const bgColor = isDark ? '#111827' : '#f9fafb';
-  
+  const { colors } = getTimeColors(currentHour);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
-  
-  // Render based on current view
-  if (currentView.view === VIEWS.MILESTONE && currentView.milestoneId) {
-    const milestone = milestones.find(m => m.id === currentView.milestoneId);
-    if (milestone) {
-      return (
-        <MilestoneView
-          milestone={milestone}
-          onUpdateMilestone={handleUpdateMilestone}
-          onBack={handleBackToDashboard}
-          isDark={isDark}
-          currentHour={currentHour}
-        />
-      );
+
+  // Render content based on displayView (for smooth transitions)
+  const renderContent = () => {
+    if (displayView.view === VIEWS.MILESTONE && displayView.milestoneId) {
+      const milestone = milestones.find(m => m.id === displayView.milestoneId);
+      if (milestone) {
+        return (
+          <MilestoneView
+            milestone={milestone}
+            onUpdateMilestone={handleUpdateMilestone}
+            onBack={handleBackToDashboard}
+            isDark={isDark}
+            currentHour={currentHour}
+          />
+        );
+      }
     }
-  }
-  
+
+    return (
+      <Dashboard
+        milestones={milestones}
+        onSelectMilestone={handleSelectMilestone}
+        onCreateMilestone={handleCreateMilestone}
+        isDark={isDark}
+        currentHour={currentHour}
+      />
+    );
+  };
+
+  const isMilestoneView = displayView.view === VIEWS.MILESTONE && displayView.milestoneId;
+  const { darkText: timeBasedDarkText } = getTimeColors(currentHour);
+  const topBarTextColor = timeBasedDarkText ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)';
+
   return (
-    <Dashboard
-      milestones={milestones}
-      onSelectMilestone={handleSelectMilestone}
-      onCreateMilestone={handleCreateMilestone}
-      isDark={isDark}
-      currentHour={currentHour}
-    />
+    <>
+      {/* Page transition styles */}
+      <style>{`
+        .page-transition {
+          transition: opacity 0.3s ease;
+        }
+        .page-transition.fade-out {
+          opacity: 0;
+        }
+        .page-transition.fade-in {
+          opacity: 1;
+        }
+      `}</style>
+
+      {/* Shared background that persists across transitions */}
+      <ImmersiveBackground colors={colors} darkText={false} />
+
+      {/* Content with transition */}
+      <div className={`page-transition relative z-10 min-h-screen ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
+        {/* Header bar when viewing a milestone */}
+        {isMilestoneView && (
+          <button
+            onClick={handleBackToDashboard}
+            className="w-full h-14 flex items-center gap-2 px-4 cursor-pointer relative z-20"
+            style={{ backgroundColor: 'transparent' }}
+          >
+            <FramedLogo color={topBarTextColor} size={20} />
+            <span className="text-base font-semibold" style={{ color: topBarTextColor, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
+          </button>
+        )}
+        {renderContent()}
+      </div>
+    </>
   );
 }
