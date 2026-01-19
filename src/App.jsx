@@ -1998,21 +1998,18 @@ export default function VacationTracker() {
   const [milestones, setMilestones] = useState([]);
   const [currentView, setCurrentView] = useState({ view: VIEWS.DASHBOARD });
   const [loading, setLoading] = useState(true);
-  const [isDark, setIsDark] = useState(false);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
 
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [displayView, setDisplayView] = useState({ view: VIEWS.DASHBOARD });
-  
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDark(mq.matches);
-    const h = (e) => setIsDark(e.matches);
-    mq.addEventListener('change', h);
-    return () => mq.removeEventListener('change', h);
-  }, []);
-  
+
+  // Determine dark mode based on gradient colors, not system preference
+  // When darkText is true, gradient is light (use light mode)
+  // When darkText is false, gradient is dark (use dark mode)
+  const { darkText: gradientIsLight } = getTimeColors(currentHour);
+  const isDark = !gradientIsLight;
+
   useEffect(() => {
     const i = setInterval(() => setCurrentHour(new Date().getHours() + new Date().getMinutes() / 60), 60000);
     return () => clearInterval(i);
