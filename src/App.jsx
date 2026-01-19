@@ -1105,10 +1105,12 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
   const [title, setTitle] = useState('');
   const [selectedTags, setSelectedTags] = useState([]);
   const [dueDate, setDueDate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const dateInputRef = useRef(null);
   const [noteContent, setNoteContent] = useState('');
   const [noteDate, setNoteDate] = useState(() => new Date().toISOString().split('T')[0]);
 
-  useEffect(() => { if (isOpen) { setActiveTab(defaultTab); setTitle(''); setSelectedTags([]); setDueDate(''); setNoteContent(''); setNoteDate(new Date().toISOString().split('T')[0]); } }, [isOpen, defaultTab]);
+  useEffect(() => { if (isOpen) { setActiveTab(defaultTab); setTitle(''); setSelectedTags([]); setDueDate(''); setShowDatePicker(false); setNoteContent(''); setNoteDate(new Date().toISOString().split('T')[0]); } }, [isOpen, defaultTab]);
 
   const handleSubmitTask = (e) => { e.preventDefault(); if (!title.trim()) return; onAddTask({ id: Date.now().toString(), title: title.trim(), status: STATUS.NOT_STARTED, tags: selectedTags, dueDate: dueDate || null, subtasks: [], notes: [] }); onClose(); };
   const handleSubmitNote = (e) => { e.preventDefault(); if (!noteContent.trim()) return; onAddNote({ id: Date.now().toString(), content: noteContent.trim(), date: noteDate, createdAt: new Date().toISOString() }); onClose(); };
@@ -1186,9 +1188,39 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Task Title</label>
               <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} placeholder="What do you want to accomplish?" autoFocus />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Due Date</label>
-              <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none' }} />
+            <div className="flex items-center gap-3">
+              {/* Deadline button / picker */}
+              {showDatePicker ? (
+                <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg" style={{ backgroundColor: inputBg }}>
+                  <input
+                    ref={dateInputRef}
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => { setDueDate(e.target.value); setShowDatePicker(false); }}
+                    onBlur={() => setShowDatePicker(false)}
+                    className="text-sm bg-transparent border-none focus:outline-none"
+                    style={{ color: textPrimary, colorScheme: 'dark' }}
+                    autoFocus
+                  />
+                  {dueDate && (
+                    <button type="button" onClick={() => { setDueDate(''); setShowDatePicker(false); }} className="p-0.5" style={{ color: textSecondary }}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setShowDatePicker(true); setTimeout(() => dateInputRef.current?.showPicker?.(), 50); }}
+                  className="flex items-center gap-2 text-sm py-2 px-3 rounded-lg"
+                  style={{ color: textSecondary, backgroundColor: inputBg }}
+                >
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: dueDate ? '#3b82f6' : '#374151', color: dueDate ? 'white' : textSecondary }}>
+                    <Calendar className="w-3.5 h-3.5" />
+                  </span>
+                  <span>{dueDate ? new Date(dueDate + 'T00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Deadline'}</span>
+                </button>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: textSecondary }}>Tags</label>
