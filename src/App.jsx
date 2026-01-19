@@ -2101,18 +2101,24 @@ export default function VacationTracker() {
 
       {/* Fixed header bar when viewing a milestone */}
       {isMilestoneView && (
-        <div className="fixed top-0 left-0 right-0 h-14 z-40 overflow-hidden">
-          {/* Clone of the background for the header area */}
-          <div className="absolute inset-0" style={{ backgroundColor: colors[0] }} />
-          <div className="absolute inset-0" style={{ backgroundColor: timeBasedDarkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)' }} />
-          <button
-            onClick={handleBackToDashboard}
-            className="relative z-10 w-full h-full flex items-center gap-2 px-4 cursor-pointer"
-          >
-            <FramedLogo color={topBarTextColor} size={20} />
-            <span className="text-base font-semibold" style={{ color: topBarTextColor, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
-          </button>
-        </div>
+        <>
+          <div className="fixed top-0 left-0 right-0 h-14 z-40 overflow-hidden">
+            {/* Clone of the background for the header area */}
+            <div className="absolute inset-0" style={{ backgroundColor: colors[0] }} />
+            <div className="absolute inset-0" style={{ backgroundColor: timeBasedDarkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)' }} />
+            <button
+              onClick={handleBackToDashboard}
+              className="relative z-10 w-full h-full flex items-center gap-2 px-4 cursor-pointer"
+            >
+              <FramedLogo color={topBarTextColor} size={20} />
+              <span className="text-base font-semibold" style={{ color: topBarTextColor, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
+            </button>
+          </div>
+          {/* Fill behind rounded corners so card appears on top of header */}
+          <div className="fixed top-14 left-0 right-0 h-8" style={{ backgroundColor: colors[0], zIndex: 5 }}>
+            <div className="absolute inset-0" style={{ backgroundColor: timeBasedDarkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)' }} />
+          </div>
+        </>
       )}
 
       {/* Content with transition */}
