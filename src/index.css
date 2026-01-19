@@ -9,8 +9,8 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  /* Solid background color for Safari toolbar area - updated dynamically via JS */
-  background-color: #421565;
+  /* Solid background color for Safari toolbar area - uses darkest gradient color */
+  background-color: #171438;
 }
 
 body {
