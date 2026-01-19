@@ -1953,6 +1953,8 @@ export default function VacationTracker() {
     };
 
     const themeColor = blendWithOverlay(colors[0], darkText);
+    const color1 = blendWithOverlay(colors[1], darkText);
+    const color2 = blendWithOverlay(colors[2], darkText);
     const bottomColor = blendWithOverlay(colors[3], darkText);
 
     // Update meta theme-color for Safari toolbar (uses top color)
@@ -1960,8 +1962,10 @@ export default function VacationTracker() {
     if (metaThemeColor) {
       metaThemeColor.setAttribute('content', themeColor);
     }
-    // Update CSS variable for body background (uses bottom color for bottom overscroll)
-    document.documentElement.style.setProperty('--theme-bg', bottomColor);
+    // Set body background to gradient matching the ImmersiveBackground
+    // This ensures Safari's toolbar area shows a matching gradient
+    document.body.style.background = `linear-gradient(to bottom, ${themeColor}, ${color1}, ${color2}, ${bottomColor})`;
+    document.body.style.backgroundAttachment = 'fixed';
   }, [currentHour]);
   
   // Initial load from localStorage
