@@ -851,7 +851,7 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {dateKeys.length === 0 ? (
-          <div className="text-center py-16"><MessageSquare className="w-12 h-12 mx-auto mb-4" style={{ color: textSecondary }} /><p className="text-lg font-medium" style={{ color: textPrimary }}>No notes yet</p><p className="text-sm mt-1" style={{ color: textSecondary }}>Tap + to add your first note</p></div>
+          <div className="text-center py-16"><BookOpen className="w-12 h-12 mx-auto mb-4" style={{ color: textSecondary }} /><p className="text-lg font-medium" style={{ color: textPrimary }}>No notes yet</p><p className="text-sm mt-1" style={{ color: textSecondary }}>Tap + to add your first note</p></div>
         ) : (
           <div className="space-y-6">
             {dateKeys.map(dateKey => (
@@ -965,9 +965,9 @@ function TaskItem({ task, onUpdate, onDelete, allTags, isDark, onOpenNotes, onDr
   const hasSubtasks = task.subtasks.length > 0;
   const noteCount = (task.notes || []).length;
 
-  // Semi-transparent card with glass effect - more solid than milestone cards
-  const cardBg = isDark ? 'rgba(31, 41, 55, 0.8)' : 'rgba(255, 255, 255, 0.75)';
-  const cardBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+  // Semi-transparent card with glass effect
+  const cardBg = isDark ? 'rgba(31, 41, 55, 0.4)' : 'rgba(255, 255, 255, 0.25)';
+  const cardBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)';
   const textPrimary = isDark ? '#f3f4f6' : '#111827';
   const textSecondary = isDark ? '#9ca3af' : '#6b7280';
   const textMuted = isDark ? '#6b7280' : '#9ca3af';
@@ -1677,7 +1677,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
   const textSecondary = isDark ? '#9ca3af' : '#6b7280';
 
   return (
-    <div className="min-h-[calc(100vh-56px)] relative" style={{ backgroundColor: overlayBg }}>
+    <div className="relative min-h-[calc(100vh-56px)] pb-24" style={{ backgroundColor: overlayBg }}>
       {/* FAB hover styles */}
       <style>{`
         .fab-button {
@@ -1748,19 +1748,19 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
             <div className="flex rounded-full backdrop-blur-md flex-shrink-0 p-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.1)', border: `1px solid ${cardBorder}` }}>
               <button
                 onClick={() => setShowJournal(false)}
-                className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
+                className="px-2 sm:px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
                 style={{ backgroundColor: !showJournal ? cardBg : 'transparent', color: !showJournal ? textPrimary : textSecondaryOverlay }}
               >
-                <Check className="w-3.5 h-3.5" />
-                Tasks
+                <Check className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline">Tasks</span>
               </button>
               <button
                 onClick={() => setShowJournal(true)}
-                className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
+                className="px-2 sm:px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
                 style={{ backgroundColor: showJournal ? cardBg : 'transparent', color: showJournal ? textPrimary : textSecondaryOverlay }}
               >
-                <BookOpen className="w-3.5 h-3.5" />
-                Notes
+                <BookOpen className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline">Notes</span>
                 {totalNotes > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs bg-blue-500 text-white">{totalNotes > 9 ? '9+' : totalNotes}</span>}
               </button>
             </div>
@@ -1815,7 +1815,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
           >
             {dateKeys.length === 0 ? (
               <div className="text-center py-12">
-                <MessageSquare className="w-10 h-10 mx-auto mb-3" style={{ color: textSecondaryOverlay, opacity: 0.5 }} />
+                <BookOpen className="w-10 h-10 mx-auto mb-3" style={{ color: textSecondaryOverlay, opacity: 0.5 }} />
                 <p className="text-sm" style={{ color: textSecondaryOverlay }}>No notes yet</p>
               </div>
             ) : (
@@ -2043,19 +2043,25 @@ export default function VacationTracker() {
       {/* Shared background that persists across transitions */}
       <ImmersiveBackground colors={colors} darkText={false} />
 
-      {/* Content with transition */}
-      <div className={`page-transition relative z-10 min-h-screen ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
-        {/* Header bar when viewing a milestone */}
-        {isMilestoneView && (
+      {/* Fixed header bar when viewing a milestone */}
+      {isMilestoneView && (
+        <div className="fixed top-0 left-0 right-0 h-14 z-40 overflow-hidden">
+          {/* Clone of the background for the header area */}
+          <div className="absolute inset-0" style={{ backgroundColor: colors[0] }} />
+          <div className="absolute inset-0" style={{ backgroundColor: timeBasedDarkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)' }} />
           <button
             onClick={handleBackToDashboard}
-            className="w-full h-14 flex items-center gap-2 px-4 cursor-pointer relative z-20"
-            style={{ backgroundColor: 'transparent' }}
+            className="relative z-10 w-full h-full flex items-center gap-2 px-4 cursor-pointer"
           >
             <FramedLogo color={topBarTextColor} size={20} />
             <span className="text-base font-semibold" style={{ color: topBarTextColor, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
           </button>
-        )}
+        </div>
+      )}
+
+      {/* Content with transition */}
+      <div className={`page-transition relative z-10 ${isTransitioning ? 'fade-out' : 'fade-in'}`} style={{ minHeight: '100vh' }}>
+        {isMilestoneView && <div className="h-14" />}
         {renderContent()}
       </div>
     </>
