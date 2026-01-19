@@ -4,8 +4,8 @@
   "description": "Track your milestones and goals",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#4f46e5",
+  "background_color": "#171438",
+  "theme_color": "#171438",
   "icons": [
     {
       "src": "/icon-192.svg",

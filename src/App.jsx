@@ -1241,7 +1241,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
   };
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative">
       {/* Card and FAB hover styles */}
       <style>{`
         .milestone-card {
@@ -1275,7 +1275,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
       `}</style>
 
       {/* All content floats above the gradient */}
-      <div className="relative z-10 min-h-screen pb-8 px-5" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
+      <div className="relative z-10 pb-8 px-5" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
         {/* Header */}
         <div className="pb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -1924,14 +1924,43 @@ export default function VacationTracker() {
 
   // Update theme-color meta tag and body background to match gradient (for Safari status bar)
   useEffect(() => {
-    const { colors } = getTimeColors(currentHour);
+    const { colors, darkText } = getTimeColors(currentHour);
+
+    // Blend color with overlay to match rendered background
+    // The ImmersiveBackground uses rgba(0,0,0,0.25) for dark mode and rgba(255,255,255,0.15) for light mode
+    const blendWithOverlay = (hex, darkMode) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+
+      if (darkMode) {
+        // Blend with white at 15% opacity
+        const blended = {
+          r: Math.round(r + (255 - r) * 0.15),
+          g: Math.round(g + (255 - g) * 0.15),
+          b: Math.round(b + (255 - b) * 0.15)
+        };
+        return `#${blended.r.toString(16).padStart(2, '0')}${blended.g.toString(16).padStart(2, '0')}${blended.b.toString(16).padStart(2, '0')}`;
+      } else {
+        // Blend with black at 25% opacity
+        const blended = {
+          r: Math.round(r * 0.75),
+          g: Math.round(g * 0.75),
+          b: Math.round(b * 0.75)
+        };
+        return `#${blended.r.toString(16).padStart(2, '0')}${blended.g.toString(16).padStart(2, '0')}${blended.b.toString(16).padStart(2, '0')}`;
+      }
+    };
+
+    const themeColor = blendWithOverlay(colors[0], darkText);
+
     // Update meta theme-color for Safari toolbar
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', colors[0]);
+      metaThemeColor.setAttribute('content', themeColor);
     }
     // Update CSS variable for body background (overscroll areas)
-    document.documentElement.style.setProperty('--theme-bg', colors[0]);
+    document.documentElement.style.setProperty('--theme-bg', themeColor);
   }, [currentHour]);
   
   // Initial load from localStorage

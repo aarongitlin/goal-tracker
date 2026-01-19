@@ -10,7 +10,7 @@ html, body {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   /* Ensure background color extends to edges for Safari */
-  background-color: var(--theme-bg, #1e3a5f);
+  background-color: var(--theme-bg, #171438);
 }
 
 body {
