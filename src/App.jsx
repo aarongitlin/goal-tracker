@@ -1289,7 +1289,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
         </div>
 
         {/* Content */}
-        <div className="px-5 pb-28 space-y-8">
+        <div className="px-0 sm:px-5 pb-28 space-y-8">
           {milestones.length === 0 ? (
             <div className="text-center py-16">
               <div
@@ -1678,7 +1678,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
 
   return (
     <div
-      className="relative min-h-[calc(100vh-56px)] pb-24 rounded-t-3xl backdrop-blur-md"
+      className="fixed inset-x-0 top-14 bottom-0 rounded-t-3xl backdrop-blur-md overflow-hidden"
       style={{
         backgroundColor: overlayBg,
         border: `1px solid ${cardBorder}`,
@@ -1701,8 +1701,8 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
         }
       `}</style>
 
-      {/* All content */}
-      <div className="relative">
+      {/* Scrollable content */}
+      <div className="relative h-full overflow-y-auto pb-24">
         {/* Header */}
         <div className="px-4 pt-4 pb-6">
           <div className="flex items-start justify-between">
@@ -1921,6 +1921,18 @@ export default function VacationTracker() {
     const i = setInterval(() => setCurrentHour(new Date().getHours() + new Date().getMinutes() / 60), 60000);
     return () => clearInterval(i);
   }, []);
+
+  // Update theme-color meta tag and body background to match gradient (for Safari status bar)
+  useEffect(() => {
+    const { colors } = getTimeColors(currentHour);
+    // Update meta theme-color for Safari toolbar
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', colors[0]);
+    }
+    // Update CSS variable for body background (overscroll areas)
+    document.documentElement.style.setProperty('--theme-bg', colors[0]);
+  }, [currentHour]);
   
   // Initial load from localStorage
   useEffect(() => {
@@ -2068,7 +2080,6 @@ export default function VacationTracker() {
 
       {/* Content with transition */}
       <div className={`page-transition relative z-10 ${isTransitioning ? 'fade-out' : 'fade-in'}`} style={{ minHeight: '100vh' }}>
-        {isMilestoneView && <div className="h-14" />}
         {renderContent()}
       </div>
     </>
