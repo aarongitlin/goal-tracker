@@ -1677,7 +1677,14 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
   const textSecondary = isDark ? '#9ca3af' : '#6b7280';
 
   return (
-    <div className="relative min-h-[calc(100vh-56px)] pb-24" style={{ backgroundColor: overlayBg }}>
+    <div
+      className="relative min-h-[calc(100vh-56px)] pb-24 rounded-t-3xl backdrop-blur-md"
+      style={{
+        backgroundColor: overlayBg,
+        border: `1px solid ${cardBorder}`,
+        borderBottom: 'none'
+      }}
+    >
       {/* FAB hover styles */}
       <style>{`
         .fab-button {
