@@ -1119,41 +1119,89 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
   const accentGradient = `linear-gradient(135deg, ${colors[1]}, ${colors[2]})`;
 
   // Darker modal with slight transparency
-  const modalBg = 'rgba(17, 24, 39, 0.95)';
+  const modalBg = 'rgba(17, 24, 39, 0.98)';
   const inputBg = 'rgba(31, 41, 55, 0.8)';
   const inputBorder = 'rgba(75, 85, 99, 0.6)';
   const textPrimary = '#f3f4f6';
   const textSecondary = '#9ca3af';
-  const tabBg = 'rgba(55, 65, 81, 0.6)';
+  const toggleBg = 'rgba(55, 65, 81, 0.6)';
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-[60] backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[90vh] overflow-y-auto backdrop-blur-md" style={{ backgroundColor: modalBg, border: '1px solid rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
-        <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
+    <div className="fixed inset-0 z-[60] flex flex-col" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Modal container - full screen on mobile, centered card on desktop */}
+      <div
+        className="relative flex flex-col w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:m-auto sm:rounded-xl overflow-hidden"
+        style={{ backgroundColor: modalBg, border: '1px solid rgba(255,255,255,0.1)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Fixed header */}
+        <div
+          className="flex-shrink-0 px-4 flex justify-between items-center"
+          style={{ borderBottom: `1px solid ${inputBorder}`, paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))', paddingBottom: '12px' }}
+        >
           <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Add New</h2>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/10 transition-colors" style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-4 pb-0">
-          <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: tabBg }}>
-            <button onClick={() => setActiveTab('task')} className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors" style={{ background: activeTab === 'task' ? accentGradient : 'transparent', color: activeTab === 'task' ? 'white' : textSecondary }}>Task</button>
-            <button onClick={() => setActiveTab('note')} className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors" style={{ background: activeTab === 'note' ? accentGradient : 'transparent', color: activeTab === 'note' ? 'white' : textSecondary }}>Note</button>
+          <div className="flex items-center gap-3">
+            {/* Compact Task/Note toggle */}
+            <div className="flex rounded-full p-0.5" style={{ backgroundColor: toggleBg }}>
+              <button
+                onClick={() => setActiveTab('task')}
+                className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
+                style={{ background: activeTab === 'task' ? accentGradient : 'transparent', color: activeTab === 'task' ? 'white' : textSecondary }}
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Task</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('note')}
+                className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1.5 transition-colors"
+                style={{ background: activeTab === 'note' ? accentGradient : 'transparent', color: activeTab === 'note' ? 'white' : textSecondary }}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Note</span>
+              </button>
+            </div>
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/10 transition-colors" style={{ color: textSecondary }}>
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
-        {activeTab === 'task' && (
-          <form onSubmit={handleSubmitTask} className="p-4 space-y-4">
-            <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Task Title</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} placeholder="What do you want to accomplish?" autoFocus /></div>
-            <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Due Date</label><input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} /></div>
-            <div><label className="block text-sm font-medium mb-2" style={{ color: textSecondary }}>Tags</label><TagEditor selectedTags={selectedTags} onTagsChange={setSelectedTags} allTags={allTags} isDark={isDark} /></div>
-            <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Task</button>
-          </form>
-        )}
-        {activeTab === 'note' && (
-          <form onSubmit={handleSubmitNote} className="p-4 space-y-4">
-            <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Note</label><textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="What's on your mind?" rows={4} className="w-full px-3 py-2 rounded-lg resize-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus /></div>
-            <div><label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Date</label><input type="date" value={noteDate} onChange={(e) => setNoteDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} /></div>
-            <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Note</button>
-          </form>
-        )}
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'task' && (
+            <form onSubmit={handleSubmitTask} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Task Title</label>
+                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} placeholder="What do you want to accomplish?" autoFocus />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Due Date</label>
+                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: textSecondary }}>Tags</label>
+                <TagEditor selectedTags={selectedTags} onTagsChange={setSelectedTags} allTags={allTags} isDark={isDark} />
+              </div>
+              <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient, marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>Add Task</button>
+            </form>
+          )}
+          {activeTab === 'note' && (
+            <form onSubmit={handleSubmitNote} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Note</label>
+                <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="What's on your mind?" rows={4} className="w-full px-3 py-2 rounded-lg resize-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Date</label>
+                <input type="date" value={noteDate} onChange={(e) => setNoteDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              </div>
+              <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient, marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>Add Note</button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
