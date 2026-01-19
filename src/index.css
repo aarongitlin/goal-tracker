@@ -9,8 +9,8 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  /* Ensure background color extends to edges for Safari */
-  background-color: var(--theme-bg, #171438);
+  /* Ensure background color extends to edges for Safari (matches gradient bottom) */
+  background-color: var(--theme-bg, #421565);
 }
 
 body {
@@ -21,6 +21,5 @@ body {
 
 #root {
   height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: none;
+  overflow: hidden;
 }

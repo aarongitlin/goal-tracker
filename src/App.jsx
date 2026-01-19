@@ -134,7 +134,7 @@ function getTimeGradient(hour) {
 // Immersive animated background with organic blob shapes and film grain
 function ImmersiveBackground({ colors, darkText }) {
   return (
-    <div className="fixed inset-0" style={{ zIndex: 0 }}>
+    <div className="fixed" style={{ zIndex: 0, top: '-50px', left: '-50px', right: '-50px', bottom: '-50px' }}>
       {/* Base color */}
       <div
         className="absolute inset-0"
@@ -1241,7 +1241,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
   };
 
   return (
-    <div className="relative">
+    <div className="fixed inset-0 overflow-y-auto overscroll-none" style={{ zIndex: 10 }}>
       {/* Card and FAB hover styles */}
       <style>{`
         .milestone-card {
@@ -1275,7 +1275,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
       `}</style>
 
       {/* All content floats above the gradient */}
-      <div className="relative z-10 pb-8 px-5" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
+      <div className="pb-8 px-5" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
         {/* Header */}
         <div className="pb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -1953,14 +1953,15 @@ export default function VacationTracker() {
     };
 
     const themeColor = blendWithOverlay(colors[0], darkText);
+    const bottomColor = blendWithOverlay(colors[3], darkText);
 
-    // Update meta theme-color for Safari toolbar
+    // Update meta theme-color for Safari toolbar (uses top color)
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute('content', themeColor);
     }
-    // Update CSS variable for body background (overscroll areas)
-    document.documentElement.style.setProperty('--theme-bg', themeColor);
+    // Update CSS variable for body background (uses bottom color for bottom overscroll)
+    document.documentElement.style.setProperty('--theme-bg', bottomColor);
   }, [currentHour]);
   
   // Initial load from localStorage
@@ -2108,7 +2109,7 @@ export default function VacationTracker() {
       )}
 
       {/* Content with transition */}
-      <div className={`page-transition relative z-10 ${isTransitioning ? 'fade-out' : 'fade-in'}`} style={{ minHeight: '100vh' }}>
+      <div className={`page-transition relative z-10 ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
         {renderContent()}
       </div>
     </>
