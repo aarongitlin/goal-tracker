@@ -550,7 +550,7 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, isDark }) {
   );
 }
 
-function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark }) {
+function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }) {
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(() => {
@@ -558,7 +558,7 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark }) {
     d.setDate(d.getDate() + 14);
     return d.toISOString().split('T')[0];
   });
-  
+
   useEffect(() => {
     if (isOpen) {
       setTitle('');
@@ -568,15 +568,18 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark }) {
       setEndDate(d.toISOString().split('T')[0]);
     }
   }, [isOpen]);
-  
+
   if (!isOpen) return null;
-  
+
+  const { colors } = getTimeColors(currentHour);
+  const accentGradient = `linear-gradient(135deg, ${colors[1]}, ${colors[2]})`;
+
   const modalBg = isDark ? '#1f2937' : '#ffffff';
   const inputBg = isDark ? '#111827' : '#ffffff';
   const inputBorder = isDark ? '#374151' : '#d1d5db';
   const textPrimary = isDark ? '#f3f4f6' : '#111827';
   const textSecondary = isDark ? '#9ca3af' : '#374151';
-  
+
   const handleCreate = () => {
     if (!title.trim()) return;
     onCreate({
@@ -590,7 +593,7 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark }) {
     });
     onClose();
   };
-  
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
       <div className="w-full sm:max-w-md sm:rounded-xl rounded-t-xl" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
@@ -603,17 +606,17 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark }) {
             <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Title</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Q1 Goals, Vacation, Sprint 5..." className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Start</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
             </div>
-            <div>
+            <div className="flex-1">
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>End</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
             </div>
           </div>
-          <button onClick={handleCreate} disabled={!title.trim()} className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium disabled:opacity-50">Create Milestone</button>
+          <button onClick={handleCreate} disabled={!title.trim()} className="w-full py-3 rounded-lg font-medium text-white disabled:opacity-50" style={{ background: accentGradient }}>Create Milestone</button>
         </div>
       </div>
     </div>
@@ -1349,7 +1352,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
         </button>
       </div>
 
-      <CreateMilestoneModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={onCreateMilestone} isDark={isDark} />
+      <CreateMilestoneModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={onCreateMilestone} isDark={isDark} currentHour={currentHour} />
     </div>
   );
 }
