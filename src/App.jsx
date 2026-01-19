@@ -133,9 +133,11 @@ function getTimeGradient(hour) {
 }
 
 // Immersive animated background with organic blob shapes and film grain
+// Uses absolute positioning with extended height so Safari sees "scrollable" content
+// behind the bottom toolbar, allowing the gradient to extend seamlessly
 function ImmersiveBackground({ colors, darkText }) {
   return (
-    <div className="fixed" style={{ zIndex: 0, top: '-50px', left: '-50px', right: '-50px', bottom: '-50px' }}>
+    <div className="absolute" style={{ zIndex: 0, top: '-50px', left: '-50px', right: '-50px', bottom: '-150px' }}>
       {/* Base color */}
       <div
         className="absolute inset-0"
@@ -2183,8 +2185,11 @@ export default function VacationTracker() {
         }
       `}</style>
 
-      {/* Shared background that persists across transitions */}
-      <ImmersiveBackground colors={colors} darkText={false} />
+      {/* Wrapper to contain the absolute-positioned background and prevent scroll */}
+      <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+        {/* Shared background that persists across transitions */}
+        <ImmersiveBackground colors={colors} darkText={false} />
+      </div>
 
       {/* Fixed header bar when viewing a milestone */}
       {isMilestoneView && (
