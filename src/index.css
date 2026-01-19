@@ -9,9 +9,8 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  /* Gradient background for Safari toolbar area - matches night theme */
-  background: linear-gradient(to bottom, #171438, #251e60, #390f70, #421565);
-  background-attachment: fixed;
+  /* Solid background color for Safari toolbar area - updated dynamically via JS */
+  background-color: #421565;
 }
 
 body {

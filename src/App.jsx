@@ -2055,10 +2055,9 @@ export default function VacationTracker() {
     if (metaThemeColor) {
       metaThemeColor.setAttribute('content', themeColor);
     }
-    // Set body background to gradient matching the ImmersiveBackground
-    // This ensures Safari's toolbar area shows a matching gradient
-    document.body.style.background = `linear-gradient(to bottom, ${themeColor}, ${color1}, ${color2}, ${bottomColor})`;
-    document.body.style.backgroundAttachment = 'fixed';
+    // Set body background color for Safari toolbar area
+    // Using solid color because background-attachment:fixed doesn't work on iOS Safari
+    document.body.style.backgroundColor = bottomColor;
   }, [currentHour]);
   
   // Initial load from localStorage
