@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp, Home, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 
 const STATUS = {
@@ -1129,7 +1130,8 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
   // Calculate header height for content padding
   const headerHeight = 'calc(56px + env(safe-area-inset-top, 0px))';
 
-  return (
+  // Use portal to render modal at document root, escaping any parent overflow constraints
+  return createPortal(
     <div className="fixed inset-0 z-[60]" onClick={onClose}>
       {/* Modal background - covers entire screen */}
       <div className="absolute inset-0" style={{ backgroundColor: modalBg }} />
@@ -1213,7 +1215,8 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
