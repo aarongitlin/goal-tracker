@@ -2088,8 +2088,7 @@ export default function VacationTracker() {
   };
 
   const handleBackToDashboard = () => {
-    // Use browser history.back() so the back button state stays consistent
-    window.history.back();
+    navigateTo({ view: VIEWS.DASHBOARD });
   };
 
   const handleCreateMilestone = (newMilestone) => {
