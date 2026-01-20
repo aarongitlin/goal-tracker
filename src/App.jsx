@@ -1715,11 +1715,10 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
 
   return (
     <div
-      className="fixed inset-x-0 top-14 bottom-0 rounded-t-3xl backdrop-blur-md overflow-hidden"
+      className="fixed inset-x-0 top-14 bottom-20 rounded-3xl backdrop-blur-md overflow-hidden mx-3"
       style={{
         background: cardGradient,
-        border: `1px solid ${cardBorder}`,
-        borderBottom: 'none'
+        border: `1px solid ${cardBorder}`
       }}
     >
       {/* FAB hover styles */}
@@ -1924,7 +1923,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
         </div>
 
         {/* FAB */}
-        <button onClick={() => handleOpenAddModal(showJournal ? 'note' : 'task')} className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md" style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: textPrimary, border: `1px solid ${cardBorder}`, '--fab-glow': timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)' }}><Plus className="w-6 h-6" /></button>
+        <button onClick={() => handleOpenAddModal(showJournal ? 'note' : 'task')} className="fab-button absolute bottom-4 right-4 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md" style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: textPrimary, border: `1px solid ${cardBorder}`, '--fab-glow': timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)' }}><Plus className="w-6 h-6" /></button>
       </div>
       
       <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} onRenameTag={handleRenameTag} onDeleteTag={handleDeleteTag} isDark={isDark} />
