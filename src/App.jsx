@@ -1956,22 +1956,11 @@ export default function VacationTracker() {
     return () => clearInterval(i);
   }, []);
 
-  // Update theme-color meta tag and body background to match gradient (for Safari toolbars)
-  const isMilestoneView = displayView.view === VIEWS.MILESTONE && displayView.milestoneId;
-
-  useEffect(() => {
+  // Helper to update Safari bottom toolbar color based on view
+  const updateBottomToolbarColor = useCallback((forMilestoneView) => {
     const { colors, darkText } = getTimeColors(currentHour);
-
-    // Update meta theme-color for Safari toolbar (top) - use colors[0]
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', colors[0]);
-    }
-
-    // Set body background color for Safari toolbar area (bottom)
-    // When in milestone view, darken to match the card overlay
     let bottomColor = colors[3];
-    if (isMilestoneView) {
+    if (forMilestoneView) {
       // Card overlay uses rgba(0,0,0,0.45) for dark gradients, rgba(0,0,0,0.15) for light
       const darkenAmount = darkText ? 0.15 : 0.45;
       const r = parseInt(colors[3].slice(1, 3), 16);
@@ -1983,7 +1972,23 @@ export default function VacationTracker() {
       bottomColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
     }
     document.body.style.backgroundColor = bottomColor;
-  }, [currentHour, isMilestoneView]);
+  }, [currentHour]);
+
+  // Update theme-color meta tag and body background to match gradient (for Safari toolbars)
+  const isMilestoneView = displayView.view === VIEWS.MILESTONE && displayView.milestoneId;
+
+  useEffect(() => {
+    const { colors } = getTimeColors(currentHour);
+
+    // Update meta theme-color for Safari toolbar (top) - use colors[0]
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', colors[0]);
+    }
+
+    // Update bottom toolbar color based on current view
+    updateBottomToolbarColor(isMilestoneView);
+  }, [currentHour, isMilestoneView, updateBottomToolbarColor]);
   
   // Initial load from localStorage
   useEffect(() => {
@@ -2030,6 +2035,9 @@ export default function VacationTracker() {
   // Handle view transitions with fade
   const navigateTo = useCallback((newView) => {
     setIsTransitioning(true);
+    // Immediately update Safari bottom toolbar color for the target view
+    const targetIsMilestone = newView.view === VIEWS.MILESTONE && newView.milestoneId;
+    updateBottomToolbarColor(targetIsMilestone);
     // Wait for fade out, then switch view
     setTimeout(() => {
       setDisplayView(newView);
@@ -2039,7 +2047,7 @@ export default function VacationTracker() {
         setIsTransitioning(false);
       }, 50);
     }, 300);
-  }, []);
+  }, [updateBottomToolbarColor]);
 
   const handleSelectMilestone = (milestoneId) => {
     navigateTo({ view: VIEWS.MILESTONE, milestoneId });
