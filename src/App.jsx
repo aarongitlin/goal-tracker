@@ -544,14 +544,14 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }
             <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Title</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Q1 Goals, Vacation, Sprint 5..." className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus />
           </div>
-          <div className="flex flex-row gap-2">
-            <div className="flex-1 min-w-0">
+          <div className="flex flex-row gap-2 overflow-hidden">
+            <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Start</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
             </div>
-            <div className="flex-1 min-w-0">
+            <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>End</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
             </div>
           </div>
           <button onClick={handleCreate} disabled={!title.trim()} className="w-full py-3 rounded-lg font-medium text-white disabled:opacity-50" style={{ background: accentGradient }}>Create Milestone</button>
