@@ -544,7 +544,7 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }
             <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Title</label>
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Q1 Goals, Vacation, Sprint 5..." className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus />
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-row gap-2">
             <div className="flex-1 min-w-0">
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Start</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
