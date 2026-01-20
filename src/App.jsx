@@ -2165,7 +2165,7 @@ export default function VacationTracker() {
           bottom: '-100px',
           height: '150px',
           backgroundColor: safariBottomColor,
-          zIndex: 9999
+          zIndex: 1
         }}
       />
 
