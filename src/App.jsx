@@ -1986,17 +1986,19 @@ export default function VacationTracker() {
       }
     };
 
-    // Use the darkest color (colors[0]) for both top and bottom Safari toolbar areas
-    const themeColor = blendWithOverlay(colors[0], darkText);
+    // Top Safari toolbar uses colors[0] (top of gradient)
+    const topThemeColor = blendWithOverlay(colors[0], darkText);
+    // Bottom Safari toolbar uses colors[3] (bottom of gradient)
+    const bottomThemeColor = blendWithOverlay(colors[3], darkText);
 
     // Update meta theme-color for Safari toolbar (top)
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', themeColor);
+      metaThemeColor.setAttribute('content', topThemeColor);
     }
     // Set body background color for Safari toolbar area (bottom)
-    // Using the same dark color for consistency
-    document.body.style.backgroundColor = themeColor;
+    // Use bottom gradient color for seamless appearance
+    document.body.style.backgroundColor = bottomThemeColor;
   }, [currentHour]);
   
   // Initial load from localStorage
