@@ -1370,9 +1370,8 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
         {/* FAB */}
         <button
           onClick={() => setShowCreateModal(true)}
-          className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md"
+          className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md"
           style={{
-            zIndex: 10000,
             backgroundColor: 'rgba(255,255,255,0.25)',
             color: textPrimary,
             border: `1px solid ${cardBorder}`,
@@ -1706,14 +1705,6 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
     ? `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.15) 100%)`
     : `linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.45) 100%)`;
 
-  // Solid color for Safari 26+ to sample (it reads background-color, not background-image)
-  // This is colors[3] darkened by the card overlay amount
-  const darkenAmount = timeBasedDarkText ? 0.15 : 0.45;
-  const cr = parseInt(colors[3].slice(1, 3), 16);
-  const cg = parseInt(colors[3].slice(3, 5), 16);
-  const cb = parseInt(colors[3].slice(5, 7), 16);
-  const cardBottomColor = `rgb(${Math.round(cr * (1 - darkenAmount))}, ${Math.round(cg * (1 - darkenAmount))}, ${Math.round(cb * (1 - darkenAmount))})`;
-
   // Legacy colors for task items (keep existing filter styling)
   const bgColor = isDark ? '#111827' : '#f9fafb';
   const filterBg = isDark ? '#1f2937' : '#f3f4f6';
@@ -1726,8 +1717,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
     <div
       className="fixed inset-x-0 top-14 bottom-0 rounded-t-3xl backdrop-blur-md overflow-hidden"
       style={{
-        backgroundColor: cardBottomColor,
-        backgroundImage: cardGradient,
+        background: cardGradient,
         border: `1px solid ${cardBorder}`,
         borderBottom: 'none'
       }}
@@ -1934,7 +1924,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
         </div>
 
         {/* FAB */}
-        <button onClick={() => handleOpenAddModal(showJournal ? 'note' : 'task')} className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md" style={{ zIndex: 10000, backgroundColor: 'rgba(255,255,255,0.25)', color: textPrimary, border: `1px solid ${cardBorder}`, '--fab-glow': timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)' }}><Plus className="w-6 h-6" /></button>
+        <button onClick={() => handleOpenAddModal(showJournal ? 'note' : 'task')} className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md" style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: textPrimary, border: `1px solid ${cardBorder}`, '--fab-glow': timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)' }}><Plus className="w-6 h-6" /></button>
       </div>
       
       <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} onRenameTag={handleRenameTag} onDeleteTag={handleDeleteTag} isDark={isDark} />
@@ -1954,7 +1944,6 @@ export default function VacationTracker() {
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [displayView, setDisplayView] = useState({ view: VIEWS.DASHBOARD });
-  const [safariBottomColor, setSafariBottomColor] = useState(() => getTimeColors(new Date().getHours()).colors[3]);
 
   // Determine dark mode based on gradient colors, not system preference
   // When darkText is true, gradient is light (use light mode)
@@ -1982,11 +1971,7 @@ export default function VacationTracker() {
       const db = Math.round(b * (1 - darkenAmount));
       bottomColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
     }
-    // Set on both html and body for Safari compatibility
-    document.documentElement.style.backgroundColor = bottomColor;
     document.body.style.backgroundColor = bottomColor;
-    // Update state to render the bottom color element
-    setSafariBottomColor(bottomColor);
   }, [currentHour]);
 
   // Update theme-color meta tag and body background to match gradient (for Safari toolbars)
@@ -2101,7 +2086,8 @@ export default function VacationTracker() {
   };
 
   const handleBackToDashboard = () => {
-    navigateTo({ view: VIEWS.DASHBOARD });
+    // Use browser history.back() so the back button state stays consistent
+    window.history.back();
   };
 
   const handleCreateMilestone = (newMilestone) => {
@@ -2166,15 +2152,6 @@ export default function VacationTracker() {
 
       {/* Shared background that persists across transitions */}
       <ImmersiveBackground colors={colors} darkText={false} />
-
-      {/* Safari 26+ samples toolbar color from fixed elements at bottom of page */}
-      <div
-        className="fixed bottom-0 left-0 right-0 pointer-events-none"
-        style={{
-          height: '1px',
-          backgroundColor: safariBottomColor
-        }}
-      />
 
       {/* Fixed header bar when viewing a milestone - transparent to show gradient behind */}
       {isMilestoneView && (
