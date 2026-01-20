@@ -1706,6 +1706,14 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
     ? `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.15) 100%)`
     : `linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.45) 100%)`;
 
+  // Solid color for Safari 26+ to sample (it reads background-color, not background-image)
+  // This is colors[3] darkened by the card overlay amount
+  const darkenAmount = timeBasedDarkText ? 0.15 : 0.45;
+  const cr = parseInt(colors[3].slice(1, 3), 16);
+  const cg = parseInt(colors[3].slice(3, 5), 16);
+  const cb = parseInt(colors[3].slice(5, 7), 16);
+  const cardBottomColor = `rgb(${Math.round(cr * (1 - darkenAmount))}, ${Math.round(cg * (1 - darkenAmount))}, ${Math.round(cb * (1 - darkenAmount))})`;
+
   // Legacy colors for task items (keep existing filter styling)
   const bgColor = isDark ? '#111827' : '#f9fafb';
   const filterBg = isDark ? '#1f2937' : '#f3f4f6';
@@ -1718,7 +1726,8 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
     <div
       className="fixed inset-x-0 top-14 bottom-0 rounded-t-3xl backdrop-blur-md overflow-hidden"
       style={{
-        background: cardGradient,
+        backgroundColor: cardBottomColor,
+        backgroundImage: cardGradient,
         border: `1px solid ${cardBorder}`,
         borderBottom: 'none'
       }}
@@ -2158,14 +2167,12 @@ export default function VacationTracker() {
       {/* Shared background that persists across transitions */}
       <ImmersiveBackground colors={colors} darkText={false} />
 
-      {/* Safari bottom toolbar color - at viewport bottom edge, extending into safe area */}
+      {/* Safari 26+ samples toolbar color from fixed elements at bottom of page */}
       <div
-        className="fixed left-0 right-0 pointer-events-none"
+        className="fixed bottom-0 left-0 right-0 pointer-events-none"
         style={{
-          bottom: 0,
-          height: 'calc(env(safe-area-inset-bottom, 0px) + 1px)',
-          backgroundColor: safariBottomColor,
-          zIndex: 1
+          height: '1px',
+          backgroundColor: safariBottomColor
         }}
       />
 
