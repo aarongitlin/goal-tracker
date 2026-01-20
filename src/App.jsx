@@ -256,8 +256,8 @@ function TagsModal({ isOpen, onClose, allTags, selectedTags, onTagsChange, onRen
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
-      <div className="w-full sm:max-w-sm sm:rounded-xl rounded-t-xl max-h-[70vh] overflow-hidden" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
+      <div className="w-full sm:max-w-sm rounded-xl mx-4 sm:mx-0 max-h-[70vh] overflow-hidden" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${borderColor}` }}>
           <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Filter by Tags</h2>
           <button onClick={onClose} className="p-2 rounded-full" style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
@@ -460,8 +460,8 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, isDark }) {
   const textSecondary = isDark ? '#9ca3af' : '#374151';
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
-      <div className="w-full sm:max-w-md sm:rounded-xl rounded-t-xl" style={{ backgroundColor: modalBg }}>
+    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
+      <div className="w-full sm:max-w-md rounded-xl mx-4 sm:mx-0" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
           <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Milestone Settings</h2>
           <button onClick={onClose} style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
@@ -469,16 +469,16 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, isDark }) {
         <div className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Title</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="flex flex-row gap-2 overflow-hidden">
+            <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Start</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
             </div>
-            <div>
+            <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>End</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
             </div>
           </div>
           <button onClick={() => { onSave({ title, startDate, endDate }); onClose(); }} className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium">Save</button>
@@ -718,8 +718,8 @@ function NotesModal({ isOpen, onClose, task, onUpdateTask, isDark }) {
   const handleSaveEdit = () => { onUpdateTask({ ...task, notes: notes.map(n => n.id === editingNoteId ? { ...n, content: editContent, date: editDate } : n) }); setEditingNoteId(null); };
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
-      <div className="w-full sm:max-w-lg sm:rounded-xl rounded-t-xl max-h-[85vh] overflow-hidden flex flex-col" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
+      <div className="w-full sm:max-w-lg rounded-xl mx-4 sm:mx-0 max-h-[85vh] overflow-hidden flex flex-col" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center flex-shrink-0" style={{ borderBottom: `1px solid ${inputBorder}` }}>
           <div><h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Notes</h2><p className="text-sm" style={{ color: textSecondary }}>{task.title}</p></div>
           <button onClick={onClose} className="p-2 rounded-full" style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
