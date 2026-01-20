@@ -2092,8 +2092,7 @@ export default function VacationTracker() {
   };
 
   const handleBackToDashboard = () => {
-    // Use browser history.back() so the back button state stays consistent
-    window.history.back();
+    navigateTo({ view: VIEWS.DASHBOARD });
   };
 
   const handleCreateMilestone = (newMilestone) => {
@@ -2159,14 +2158,14 @@ export default function VacationTracker() {
       {/* Shared background that persists across transitions */}
       <ImmersiveBackground colors={colors} darkText={false} />
 
-      {/* Safari bottom toolbar color - entirely below viewport for Safari to sample */}
+      {/* Safari bottom toolbar color - at viewport bottom edge, extending into safe area */}
       <div
         className="fixed left-0 right-0 pointer-events-none"
         style={{
-          bottom: '-150px',
-          height: '150px',
+          bottom: 0,
+          height: 'calc(env(safe-area-inset-bottom, 0px) + 1px)',
           backgroundColor: safariBottomColor,
-          zIndex: 9999
+          zIndex: 1
         }}
       />
 
