@@ -1956,49 +1956,17 @@ export default function VacationTracker() {
     return () => clearInterval(i);
   }, []);
 
-  // Update theme-color meta tag and body background to match gradient (for Safari status bar)
+  // Update theme-color meta tag and body background to match gradient (for Safari toolbars)
   useEffect(() => {
-    const { colors, darkText } = getTimeColors(currentHour);
+    const { colors } = getTimeColors(currentHour);
 
-    // Blend color with overlay to match rendered background
-    // The ImmersiveBackground uses rgba(0,0,0,0.25) for dark mode and rgba(255,255,255,0.15) for light mode
-    const blendWithOverlay = (hex, darkMode) => {
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-
-      if (darkMode) {
-        // Blend with white at 15% opacity
-        const blended = {
-          r: Math.round(r + (255 - r) * 0.15),
-          g: Math.round(g + (255 - g) * 0.15),
-          b: Math.round(b + (255 - b) * 0.15)
-        };
-        return `#${blended.r.toString(16).padStart(2, '0')}${blended.g.toString(16).padStart(2, '0')}${blended.b.toString(16).padStart(2, '0')}`;
-      } else {
-        // Blend with black at 25% opacity
-        const blended = {
-          r: Math.round(r * 0.75),
-          g: Math.round(g * 0.75),
-          b: Math.round(b * 0.75)
-        };
-        return `#${blended.r.toString(16).padStart(2, '0')}${blended.g.toString(16).padStart(2, '0')}${blended.b.toString(16).padStart(2, '0')}`;
-      }
-    };
-
-    // Top Safari toolbar uses colors[0] (top of gradient)
-    const topThemeColor = blendWithOverlay(colors[0], darkText);
-    // Bottom Safari toolbar uses colors[3] (bottom of gradient)
-    const bottomThemeColor = blendWithOverlay(colors[3], darkText);
-
-    // Update meta theme-color for Safari toolbar (top)
+    // Update meta theme-color for Safari toolbar (top) - use colors[0]
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', topThemeColor);
+      metaThemeColor.setAttribute('content', colors[0]);
     }
-    // Set body background color for Safari toolbar area (bottom)
-    // Use bottom gradient color for seamless appearance
-    document.body.style.backgroundColor = bottomThemeColor;
+    // Set body background color for Safari toolbar area (bottom) - use colors[3]
+    document.body.style.backgroundColor = colors[3];
   }, [currentHour]);
   
   // Initial load from localStorage
