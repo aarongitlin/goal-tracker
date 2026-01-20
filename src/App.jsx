@@ -90,36 +90,39 @@ function getMilestoneStatus(startDate, endDate) {
 function getTimeColors(hour) {
   const h = ((hour % 24) + 24) % 24;
 
-  // NIGHT (10pm - 5am): Deep indigo/violet
+  // REFINED PALETTES: Each time period uses colors from the same hue family
+  // for smoother, more seamless gradients (especially for Safari chrome matching)
+
+  // NIGHT (10pm - 5am): Deep indigo family - dark to slightly lighter
   if (h >= 22 || h < 5) {
-    return { colors: ['#1e1b4b', '#312e81', '#4c1d95', '#581c87'], darkText: false };
+    return { colors: ['#1a1a2e', '#1e2243', '#252d5c', '#2d3a75'], darkText: false };
   }
-  // DAWN (5am - 6:30am): Deep blue to purple
+  // DAWN (5am - 6:30am): Deep blue to periwinkle
   if (h >= 5 && h < 6.5) {
-    return { colors: ['#312e81', '#4338ca', '#6366f1', '#818cf8'], darkText: false };
+    return { colors: ['#1e2243', '#2d3a75', '#4555a8', '#6678d1'], darkText: false };
   }
-  // SUNRISE (6:30am - 8am): Coral/pink
+  // SUNRISE (6:30am - 8am): Dusty rose to coral pink
   if (h >= 6.5 && h < 8) {
-    return { colors: ['#fda4af', '#fb7185', '#f472b6', '#e879f9'], darkText: false };
+    return { colors: ['#8b6b72', '#b88088', '#e49aa0', '#ffb5b5'], darkText: false };
   }
-  // MORNING (8am - 11am): Golden amber
+  // MORNING (8am - 11am): Warm amber family
   if (h >= 8 && h < 11) {
-    return { colors: ['#fef08a', '#fde047', '#facc15', '#f59e0b'], darkText: true };
+    return { colors: ['#d4a84b', '#e8be5a', '#f5d26a', '#ffe57a'], darkText: true };
   }
-  // MIDDAY (11am - 4pm): Warm cream/yellow
+  // MIDDAY (11am - 4pm): Cream to warm white
   if (h >= 11 && h < 16) {
-    return { colors: ['#fefce8', '#fef9c3', '#fef08a', '#fde047'], darkText: true };
+    return { colors: ['#e8dcc4', '#f2e8d4', '#faf4e8', '#fffdf8'], darkText: true };
   }
-  // LATE AFTERNOON (4pm - 6pm): Deep orange
+  // LATE AFTERNOON (4pm - 6pm): Warm orange family
   if (h >= 16 && h < 18) {
-    return { colors: ['#fed7aa', '#fdba74', '#fb923c', '#f97316'], darkText: false };
+    return { colors: ['#c47a4a', '#de8e52', '#f5a35c', '#ffb86c'], darkText: false };
   }
-  // SUNSET (6pm - 8pm): Pink/magenta
+  // SUNSET (6pm - 8pm): Dusty pink to rose
   if (h >= 18 && h < 20) {
-    return { colors: ['#f9a8d4', '#f472b6', '#ec4899', '#db2777'], darkText: false };
+    return { colors: ['#8b5a6b', '#a8687d', '#c87d96', '#e895b0'], darkText: false };
   }
-  // DUSK (8pm - 10pm): Purple to indigo
-  return { colors: ['#c084fc', '#a855f7', '#8b5cf6', '#7c3aed'], darkText: false };
+  // DUSK (8pm - 10pm): Purple family
+  return { colors: ['#4a3a5c', '#5d4a72', '#7a5f96', '#9875ba'], darkText: false };
 }
 
 // Helper to create gradient string from colors (for backward compat)
@@ -127,142 +130,76 @@ function colorsToGradient(colors) {
   return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 35%, ${colors[2]} 65%, ${colors[3]} 100%)`;
 }
 
+// Helper: interpolate between two hex colors
+function interpolateColor(color1, color2, factor) {
+  const hex = (c) => parseInt(c, 16);
+  const r1 = hex(color1.slice(1, 3)), g1 = hex(color1.slice(3, 5)), b1 = hex(color1.slice(5, 7));
+  const r2 = hex(color2.slice(1, 3)), g2 = hex(color2.slice(3, 5)), b2 = hex(color2.slice(5, 7));
+
+  const r = Math.round(r1 + (r2 - r1) * factor);
+  const g = Math.round(g1 + (g2 - g1) * factor);
+  const b = Math.round(b1 + (b2 - b1) * factor);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
 function getTimeGradient(hour) {
   const { colors, darkText } = getTimeColors(hour);
   return { gradient: colorsToGradient(colors), colors, darkText };
 }
 
-// Immersive animated background with organic blob shapes and film grain
+// Seamless background with smooth linear gradient and subtle center blob
+// Designed for Safari chrome matching - colors[0] matches top toolbar, colors[3] matches bottom
 function ImmersiveBackground({ colors, darkText }) {
+  // Create a mid-color for the subtle blob
+  const midColor = interpolateColor(colors[1], colors[2], 0.5);
+
   return (
-    <div className="fixed" style={{ zIndex: 0, top: '-50px', left: '-50px', right: '-50px', bottom: '-50px' }}>
-      {/* Base color */}
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: colors[0] }}
-      />
-
-      {/* Contrast adjustment overlay - darkens for dark mode, lightens for light mode */}
+    <div className="fixed inset-0" style={{ zIndex: 0 }}>
+      {/* Base seamless gradient with interpolated stops for ultra-smooth transition */}
       <div
         className="absolute inset-0"
         style={{
-          backgroundColor: darkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)',
+          background: `linear-gradient(180deg,
+            ${colors[0]} 0%,
+            ${colors[0]} 5%,
+            ${interpolateColor(colors[0], colors[1], 0.5)} 18%,
+            ${colors[1]} 30%,
+            ${interpolateColor(colors[1], colors[2], 0.5)} 45%,
+            ${colors[2]} 60%,
+            ${interpolateColor(colors[2], colors[3], 0.5)} 78%,
+            ${colors[3]} 92%,
+            ${colors[3]} 100%
+          )`
         }}
       />
 
-      {/* Large organic blob - top right */}
-      <div
-        className="absolute"
-        style={{
-          top: '-20%',
-          right: '-10%',
-          width: '80%',
-          height: '70%',
-          background: `radial-gradient(ellipse at center, ${colors[1]} 0%, ${colors[2]}88 40%, transparent 70%)`,
-          borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%',
-          filter: 'blur(40px)',
-          animation: 'blob1 20s ease-in-out infinite'
-        }}
-      />
-
-      {/* Medium blob - bottom left */}
-      <div
-        className="absolute"
-        style={{
-          bottom: '-10%',
-          left: '-15%',
-          width: '70%',
-          height: '60%',
-          background: `radial-gradient(ellipse at center, ${colors[2]} 0%, ${colors[3]}77 50%, transparent 70%)`,
-          borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
-          filter: 'blur(50px)',
-          animation: 'blob2 25s ease-in-out infinite'
-        }}
-      />
-
-      {/* Small accent blob - center */}
+      {/* Subtle center blob - uses mid-tone color, won't disrupt edge smoothness */}
       <div
         className="absolute"
         style={{
           top: '30%',
-          left: '20%',
-          width: '50%',
-          height: '45%',
-          background: `radial-gradient(ellipse at center, ${colors[3]}99 0%, ${colors[1]}44 40%, transparent 65%)`,
-          borderRadius: '50% 60% 40% 50% / 40% 60% 50% 60%',
-          filter: 'blur(60px)',
-          animation: 'blob3 18s ease-in-out infinite'
-        }}
-      />
-
-      {/* Top left accent */}
-      <div
-        className="absolute"
-        style={{
-          top: '5%',
           left: '10%',
-          width: '35%',
-          height: '30%',
-          background: `radial-gradient(ellipse at center, ${colors[1]}66 0%, transparent 60%)`,
-          borderRadius: '70% 30% 50% 50% / 50% 50% 50% 50%',
-          filter: 'blur(30px)',
-          animation: 'blob4 22s ease-in-out infinite'
+          width: '80%',
+          height: '40%',
+          background: `radial-gradient(ellipse at center,
+            ${midColor}40 0%,
+            ${midColor}20 30%,
+            transparent 60%
+          )`,
+          filter: 'blur(40px)',
         }}
       />
 
-      {/* Bottom right smaller blob */}
-      <div
-        className="absolute"
-        style={{
-          bottom: '15%',
-          right: '5%',
-          width: '40%',
-          height: '35%',
-          background: `radial-gradient(ellipse at center, ${colors[2]}55 0%, transparent 55%)`,
-          borderRadius: '40% 60% 55% 45% / 55% 45% 50% 50%',
-          filter: 'blur(45px)',
-          animation: 'blob5 28s ease-in-out infinite'
-        }}
-      />
-
-      {/* Film grain texture overlay - static for performance */}
+      {/* Very subtle noise for texture */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          opacity: 0.1,
+          opacity: 0.06,
           mixBlendMode: 'overlay'
         }}
       />
-
-      <style>{`
-        @keyframes blob1 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-          25% { transform: translate(4%, 2%) rotate(3deg) scale(1.03); }
-          50% { transform: translate(2%, 5%) rotate(6deg) scale(1.06); }
-          75% { transform: translate(-2%, 3%) rotate(2deg) scale(1.02); }
-        }
-        @keyframes blob2 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-          25% { transform: translate(-3%, -3%) rotate(-4deg) scale(1.05); }
-          50% { transform: translate(-5%, 2%) rotate(-7deg) scale(1.08); }
-          75% { transform: translate(2%, -2%) rotate(-2deg) scale(1.03); }
-        }
-        @keyframes blob3 {
-          0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-          33% { transform: translate(6%, -4%) scale(1.08) rotate(5deg); }
-          66% { transform: translate(-3%, 5%) scale(1.04) rotate(-3deg); }
-        }
-        @keyframes blob4 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-          50% { transform: translate(5%, 6%) rotate(10deg) scale(1.1); }
-        }
-        @keyframes blob5 {
-          0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
-          33% { transform: translate(-5%, 3%) scale(1.07) rotate(-4deg); }
-          66% { transform: translate(4%, -4%) scale(0.95) rotate(6deg); }
-        }
-      `}</style>
     </div>
   );
 }
