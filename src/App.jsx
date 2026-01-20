@@ -533,8 +533,8 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
-      <div className="w-full sm:max-w-md sm:rounded-xl rounded-t-xl" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
+      <div className="w-full sm:max-w-md sm:rounded-xl rounded-xl mx-4 sm:mx-0" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
           <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>New Milestone</h2>
           <button onClick={onClose} style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
@@ -542,16 +542,16 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }
         <div className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Title</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Q1 Goals, Vacation, Sprint 5..." className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus />
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Q1 Goals, Vacation, Sprint 5..." className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus />
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Start</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>End</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
             </div>
           </div>
           <button onClick={handleCreate} disabled={!title.trim()} className="w-full py-3 rounded-lg font-medium text-white disabled:opacity-50" style={{ background: accentGradient }}>Create Milestone</button>
