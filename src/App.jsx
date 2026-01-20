@@ -1957,17 +1957,33 @@ export default function VacationTracker() {
   }, []);
 
   // Update theme-color meta tag and body background to match gradient (for Safari toolbars)
+  const isMilestoneView = displayView.view === VIEWS.MILESTONE && displayView.milestoneId;
+
   useEffect(() => {
-    const { colors } = getTimeColors(currentHour);
+    const { colors, darkText } = getTimeColors(currentHour);
 
     // Update meta theme-color for Safari toolbar (top) - use colors[0]
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute('content', colors[0]);
     }
-    // Set body background color for Safari toolbar area (bottom) - use colors[3]
-    document.body.style.backgroundColor = colors[3];
-  }, [currentHour]);
+
+    // Set body background color for Safari toolbar area (bottom)
+    // When in milestone view, darken to match the card overlay
+    let bottomColor = colors[3];
+    if (isMilestoneView) {
+      // Card overlay uses rgba(0,0,0,0.45) for dark gradients, rgba(0,0,0,0.15) for light
+      const darkenAmount = darkText ? 0.15 : 0.45;
+      const r = parseInt(colors[3].slice(1, 3), 16);
+      const g = parseInt(colors[3].slice(3, 5), 16);
+      const b = parseInt(colors[3].slice(5, 7), 16);
+      const dr = Math.round(r * (1 - darkenAmount));
+      const dg = Math.round(g * (1 - darkenAmount));
+      const db = Math.round(b * (1 - darkenAmount));
+      bottomColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+    }
+    document.body.style.backgroundColor = bottomColor;
+  }, [currentHour, isMilestoneView]);
   
   // Initial load from localStorage
   useEffect(() => {
@@ -2075,7 +2091,6 @@ export default function VacationTracker() {
     );
   };
 
-  const isMilestoneView = displayView.view === VIEWS.MILESTONE && displayView.milestoneId;
   const { darkText: timeBasedDarkText } = getTimeColors(currentHour);
   const topBarTextColor = timeBasedDarkText ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)';
 
