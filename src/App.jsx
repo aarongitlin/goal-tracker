@@ -1697,9 +1697,13 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
   const textPrimary = timeBasedDarkText ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,1)';
   const textSecondaryOverlay = timeBasedDarkText ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.85)';
   const textMuted = timeBasedDarkText ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
-  const overlayBg = timeBasedDarkText ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.25)';
   const cardBg = timeBasedDarkText ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.2)';
-  const cardBorder = timeBasedDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.15)';
+  const cardBorder = timeBasedDarkText ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)';
+
+  // Subtle gradient for the card overlay - darker version of the base gradient
+  const cardGradient = timeBasedDarkText
+    ? `linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.15) 100%)`
+    : `linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.45) 100%)`;
 
   // Legacy colors for task items (keep existing filter styling)
   const bgColor = isDark ? '#111827' : '#f9fafb';
@@ -1713,7 +1717,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
     <div
       className="fixed inset-x-0 top-14 bottom-0 rounded-t-3xl backdrop-blur-md overflow-hidden"
       style={{
-        backgroundColor: overlayBg,
+        background: cardGradient,
         border: `1px solid ${cardBorder}`,
         borderBottom: 'none'
       }}
@@ -2123,26 +2127,17 @@ export default function VacationTracker() {
       {/* Shared background that persists across transitions */}
       <ImmersiveBackground colors={colors} darkText={false} />
 
-      {/* Fixed header bar when viewing a milestone */}
+      {/* Fixed header bar when viewing a milestone - transparent to show gradient behind */}
       {isMilestoneView && (
-        <>
-          <div className="fixed top-0 left-0 right-0 h-14 z-40 overflow-hidden">
-            {/* Clone of the background for the header area */}
-            <div className="absolute inset-0" style={{ backgroundColor: colors[0] }} />
-            <div className="absolute inset-0" style={{ backgroundColor: timeBasedDarkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)' }} />
-            <button
-              onClick={handleBackToDashboard}
-              className="relative z-10 w-full h-full flex items-center gap-2 px-4 cursor-pointer"
-            >
-              <FramedLogo color={topBarTextColor} size={20} />
-              <span className="text-base font-semibold" style={{ color: topBarTextColor, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
-            </button>
-          </div>
-          {/* Fill behind rounded corners so card appears on top of header */}
-          <div className="fixed top-14 left-0 right-0 h-8" style={{ backgroundColor: colors[0], zIndex: 5 }}>
-            <div className="absolute inset-0" style={{ backgroundColor: timeBasedDarkText ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)' }} />
-          </div>
-        </>
+        <div className="fixed top-0 left-0 right-0 h-14 z-40">
+          <button
+            onClick={handleBackToDashboard}
+            className="w-full h-full flex items-center gap-2 px-4 cursor-pointer"
+          >
+            <FramedLogo color={topBarTextColor} size={20} />
+            <span className="text-base font-semibold" style={{ color: topBarTextColor, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
+          </button>
+        </div>
       )}
 
       {/* Content with transition */}
