@@ -2160,7 +2160,9 @@ export default function VacationTracker() {
         <div className="fixed top-0 left-0 right-0 h-14 z-40">
           <button
             onClick={handleBackToDashboard}
+            onTouchEnd={(e) => { e.preventDefault(); handleBackToDashboard(); }}
             className="w-full h-full flex items-center gap-2 px-4 cursor-pointer"
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             <FramedLogo color={topBarTextColor} size={20} />
             <span className="text-base font-semibold" style={{ color: topBarTextColor, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
