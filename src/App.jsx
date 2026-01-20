@@ -1971,7 +1971,11 @@ export default function VacationTracker() {
       const db = Math.round(b * (1 - darkenAmount));
       bottomColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
     }
+    // Set on both html and body for Safari compatibility
+    document.documentElement.style.backgroundColor = bottomColor;
     document.body.style.backgroundColor = bottomColor;
+    // Force Safari to repaint by reading layout property
+    void document.body.offsetHeight;
   }, [currentHour]);
 
   // Update theme-color meta tag and body background to match gradient (for Safari toolbars)
