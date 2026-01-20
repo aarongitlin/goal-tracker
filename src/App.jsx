@@ -2033,7 +2033,7 @@ export default function VacationTracker() {
   }, [currentView, loading]);
   
   // Handle view transitions with fade
-  const navigateTo = useCallback((newView) => {
+  const navigateTo = useCallback((newView, { pushHistory = true } = {}) => {
     setIsTransitioning(true);
     // Immediately update Safari bottom toolbar color for the target view
     const targetIsMilestone = newView.view === VIEWS.MILESTONE && newView.milestoneId;
@@ -2042,6 +2042,13 @@ export default function VacationTracker() {
     setTimeout(() => {
       setDisplayView(newView);
       setCurrentView(newView);
+      // Push to browser history (unless this is from popstate)
+      if (pushHistory) {
+        const url = newView.view === VIEWS.MILESTONE && newView.milestoneId
+          ? `?milestone=${newView.milestoneId}`
+          : '/';
+        window.history.pushState(newView, '', url);
+      }
       // Small delay then fade in
       setTimeout(() => {
         setIsTransitioning(false);
@@ -2049,12 +2056,38 @@ export default function VacationTracker() {
     }, 300);
   }, [updateBottomToolbarColor]);
 
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event) => {
+      const newView = event.state || { view: VIEWS.DASHBOARD };
+      // Update toolbar color immediately
+      const targetIsMilestone = newView.view === VIEWS.MILESTONE && newView.milestoneId;
+      updateBottomToolbarColor(targetIsMilestone);
+      // Directly update view state (no transition delay for back/forward)
+      setDisplayView(newView);
+      setCurrentView(newView);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [updateBottomToolbarColor]);
+
+  // Set initial history state on mount
+  useEffect(() => {
+    const initialUrl = displayView.view === VIEWS.MILESTONE && displayView.milestoneId
+      ? `?milestone=${displayView.milestoneId}`
+      : '/';
+    window.history.replaceState(displayView, '', initialUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
   const handleSelectMilestone = (milestoneId) => {
     navigateTo({ view: VIEWS.MILESTONE, milestoneId });
   };
 
   const handleBackToDashboard = () => {
-    navigateTo({ view: VIEWS.DASHBOARD });
+    // Use browser history.back() so the back button state stays consistent
+    window.history.back();
   };
 
   const handleCreateMilestone = (newMilestone) => {
