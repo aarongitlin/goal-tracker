@@ -1370,8 +1370,9 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
         {/* FAB */}
         <button
           onClick={() => setShowCreateModal(true)}
-          className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md"
+          className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md"
           style={{
+            zIndex: 10000,
             backgroundColor: 'rgba(255,255,255,0.25)',
             color: textPrimary,
             border: `1px solid ${cardBorder}`,
@@ -1924,7 +1925,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
         </div>
 
         {/* FAB */}
-        <button onClick={() => handleOpenAddModal(showJournal ? 'note' : 'task')} className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md" style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: textPrimary, border: `1px solid ${cardBorder}`, '--fab-glow': timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)' }}><Plus className="w-6 h-6" /></button>
+        <button onClick={() => handleOpenAddModal(showJournal ? 'note' : 'task')} className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-md" style={{ zIndex: 10000, backgroundColor: 'rgba(255,255,255,0.25)', color: textPrimary, border: `1px solid ${cardBorder}`, '--fab-glow': timeBasedDarkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)' }}><Plus className="w-6 h-6" /></button>
       </div>
       
       <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} onRenameTag={handleRenameTag} onDeleteTag={handleDeleteTag} isDark={isDark} />
@@ -2165,7 +2166,7 @@ export default function VacationTracker() {
           bottom: '-100px',
           height: '150px',
           backgroundColor: safariBottomColor,
-          zIndex: 1
+          zIndex: 9999
         }}
       />
 
