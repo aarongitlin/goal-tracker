@@ -1944,6 +1944,7 @@ export default function VacationTracker() {
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [displayView, setDisplayView] = useState({ view: VIEWS.DASHBOARD });
+  const [safariBottomColor, setSafariBottomColor] = useState(() => getTimeColors(new Date().getHours()).colors[3]);
 
   // Determine dark mode based on gradient colors, not system preference
   // When darkText is true, gradient is light (use light mode)
@@ -1974,8 +1975,8 @@ export default function VacationTracker() {
     // Set on both html and body for Safari compatibility
     document.documentElement.style.backgroundColor = bottomColor;
     document.body.style.backgroundColor = bottomColor;
-    // Force Safari to repaint by reading layout property
-    void document.body.offsetHeight;
+    // Update state to render the bottom color element
+    setSafariBottomColor(bottomColor);
   }, [currentHour]);
 
   // Update theme-color meta tag and body background to match gradient (for Safari toolbars)
@@ -2156,6 +2157,17 @@ export default function VacationTracker() {
 
       {/* Shared background that persists across transitions */}
       <ImmersiveBackground colors={colors} darkText={false} />
+
+      {/* Safari bottom toolbar color - extends below viewport for Safari to sample */}
+      <div
+        className="fixed left-0 right-0 pointer-events-none"
+        style={{
+          bottom: '-100px',
+          height: '150px',
+          backgroundColor: safariBottomColor,
+          zIndex: 9999
+        }}
+      />
 
       {/* Fixed header bar when viewing a milestone - transparent to show gradient behind */}
       {isMilestoneView && (
