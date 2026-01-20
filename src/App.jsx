@@ -2159,11 +2159,11 @@ export default function VacationTracker() {
       {/* Shared background that persists across transitions */}
       <ImmersiveBackground colors={colors} darkText={false} />
 
-      {/* Safari bottom toolbar color - extends below viewport for Safari to sample */}
+      {/* Safari bottom toolbar color - entirely below viewport for Safari to sample */}
       <div
         className="fixed left-0 right-0 pointer-events-none"
         style={{
-          bottom: '-100px',
+          bottom: '-150px',
           height: '150px',
           backgroundColor: safariBottomColor,
           zIndex: 9999
