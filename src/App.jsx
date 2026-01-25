@@ -1250,8 +1250,9 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
 }
 
 // Dashboard Component
-function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, currentHour }) {
+function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateMilestone, onDeleteMilestone, isDark, currentHour }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [settingsMilestone, setSettingsMilestone] = useState(null);
 
   const { colors, darkText } = getTimeColors(currentHour);
   const greeting = getGreeting(Math.floor(currentHour));
@@ -1284,16 +1285,22 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
   const MilestoneRow = ({ milestone, showDivider }) => {
     const status = getMilestoneStatus(milestone.startDate, milestone.endDate);
     const tasks = milestone.tasks || [];
+    const notes = milestone.notes || [];
     const allItems = tasks.flatMap(t => [t, ...(t.subtasks || [])]);
     const completedItems = allItems.filter(i => i.status === STATUS.COMPLETE).length;
     const isComplete = status === 'complete';
 
+    const handleSettingsClick = (e) => {
+      e.stopPropagation();
+      setSettingsMilestone(milestone);
+    };
+
     return (
       <>
-        <button
-          onClick={() => onSelectMilestone(milestone.id)}
-          className="milestone-row w-full p-4 text-left transition-colors"
+        <div
+          className="milestone-row w-full p-4 text-left transition-colors cursor-pointer"
           style={{ '--row-hover': darkText ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)' }}
+          onClick={() => onSelectMilestone(milestone.id)}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
@@ -1306,9 +1313,18 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
                 {completedItems}/{allItems.length} items {isComplete ? 'completed' : 'done'}
               </p>
             </div>
-            <CircularProgress completed={completedItems} total={allItems.length} isDark={!darkText} />
+            <div className="flex items-center gap-2">
+              <CircularProgress completed={completedItems} total={allItems.length} isDark={!darkText} />
+              <button
+                onClick={handleSettingsClick}
+                className="p-2 rounded-full transition-colors"
+                style={{ color: textSecondary }}
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-        </button>
+        </div>
         {showDivider && <div style={{ height: '1px', backgroundColor: cardBorder }} />}
       </>
     );
@@ -1443,6 +1459,24 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
       </div>
 
       <CreateMilestoneModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={onCreateMilestone} isDark={isDark} currentHour={currentHour} />
+      {settingsMilestone && (
+        <GoalSettingsModal
+          isOpen={true}
+          onClose={() => setSettingsMilestone(null)}
+          goal={{ title: settingsMilestone.title, startDate: settingsMilestone.startDate, endDate: settingsMilestone.endDate }}
+          onSave={(updated) => {
+            onUpdateMilestone({ ...settingsMilestone, ...updated });
+            setSettingsMilestone(null);
+          }}
+          onDelete={() => {
+            onDeleteMilestone(settingsMilestone.id);
+            setSettingsMilestone(null);
+          }}
+          taskCount={(settingsMilestone.tasks || []).length}
+          noteCount={(settingsMilestone.standaloneNotes || []).length}
+          isDark={isDark}
+        />
+      )}
     </div>
   );
 }
@@ -2205,6 +2239,8 @@ export default function VacationTracker() {
         milestones={milestones}
         onSelectMilestone={handleSelectMilestone}
         onCreateMilestone={handleCreateMilestone}
+        onUpdateMilestone={handleUpdateMilestone}
+        onDeleteMilestone={handleDeleteMilestone}
         isDark={isDark}
         currentHour={currentHour}
       />
