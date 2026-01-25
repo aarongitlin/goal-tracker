@@ -45,13 +45,13 @@ function FramedLogo({ color = '#ffffff', size = 24, animate = false }) {
       <path
         d="M0 270.828V0H180.552V49.2414H49.2414V98.4827H164.138V147.724H49.2414V270.828H0Z"
         fill={color}
-        style={getPathStyle(22, 22)}
+        style={getPathStyle(18, 18)}
         className={animate ? 'logo-path-1' : ''}
       />
       <path
         d="M290.552 65V335.828H110V286.586H241.31V237.345H126.414V188.103H241.31V65H290.552Z"
         fill={color}
-        style={getPathStyle(-22, -22)}
+        style={getPathStyle(-18, -18)}
         className={animate ? 'logo-path-2' : ''}
       />
     </svg>
