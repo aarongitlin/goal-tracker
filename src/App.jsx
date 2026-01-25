@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp, Home, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { Check, Circle, Clock, Plus, X, ChevronDown, ChevronRight, Loader2, Settings, Calendar, Tag, MessageSquare, BookOpen, ChevronLeft, GripVertical, Sparkles, ChevronUp, Home, RefreshCw, Pencil, Trash2, MoreVertical } from 'lucide-react';
 
 const STATUS = {
   NOT_STARTED: 'not_started',
@@ -444,21 +444,43 @@ function CircularProgress({ completed, total, size = 40, isDark }) {
   );
 }
 
-function GoalSettingsModal({ isOpen, onClose, goal, onSave, isDark }) {
+function GoalSettingsModal({ isOpen, onClose, goal, onSave, onDelete, taskCount = 0, noteCount = 0, isDark }) {
   const [title, setTitle] = useState(goal.title);
   const [startDate, setStartDate] = useState(goal.startDate);
   const [endDate, setEndDate] = useState(goal.endDate);
-  
-  useEffect(() => { if (isOpen) { setTitle(goal.title); setStartDate(goal.startDate); setEndDate(goal.endDate); } }, [isOpen, goal]);
-  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTitle(goal.title);
+      setStartDate(goal.startDate);
+      setEndDate(goal.endDate);
+      setShowDeleteConfirm(false);
+    }
+  }, [isOpen, goal]);
+
   if (!isOpen) return null;
-  
+
   const modalBg = isDark ? '#1f2937' : '#ffffff';
   const inputBg = isDark ? '#111827' : '#ffffff';
   const inputBorder = isDark ? '#374151' : '#d1d5db';
   const textPrimary = isDark ? '#f3f4f6' : '#111827';
   const textSecondary = isDark ? '#9ca3af' : '#374151';
-  
+
+  const handleDelete = () => {
+    onDelete();
+    onClose();
+  };
+
+  // Build delete warning message
+  const getDeleteMessage = () => {
+    const parts = [];
+    if (taskCount > 0) parts.push(`${taskCount} task${taskCount !== 1 ? 's' : ''}`);
+    if (noteCount > 0) parts.push(`${noteCount} note${noteCount !== 1 ? 's' : ''}`);
+    if (parts.length === 0) return 'Delete this empty milestone?';
+    return `Delete ${parts.join(' and ')}?`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
       <div className="w-full sm:max-w-md rounded-xl mx-4 sm:mx-0" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
@@ -481,7 +503,45 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, isDark }) {
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
             </div>
           </div>
-          <button onClick={() => { onSave({ title, startDate, endDate }); onClose(); }} className="w-full py-3 bg-blue-500 text-white rounded-lg font-medium">Save</button>
+
+          {/* Bottom action area */}
+          {showDeleteConfirm ? (
+            <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+              <p className="text-sm text-center mb-3" style={{ color: '#ef4444' }}>{getDeleteMessage()}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-2 rounded-lg font-medium"
+                  style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 py-2 rounded-lg font-medium text-white"
+                  style={{ backgroundColor: '#ef4444' }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-3 rounded-lg"
+                style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textSecondary }}
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => { onSave({ title, startDate, endDate }); onClose(); }}
+                className="flex-1 py-3 bg-blue-500 text-white rounded-lg font-medium"
+              >
+                Save
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1388,7 +1448,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, isDark, c
 }
 
 // Milestone View Component (the existing task list view)
-function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHour }) {
+function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack, isDark, currentHour }) {
   const [filterDate, setFilterDate] = useState(DATE_FILTERS.ALL);
   const [selectedTags, setSelectedTags] = useState([]);
   const [showTagsModal, setShowTagsModal] = useState(false);
@@ -1745,20 +1805,24 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
         {/* Header */}
         <div className="px-4 pt-4 pb-6">
           <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold" style={{ color: textPrimary }}>
+                {milestone.title}
+              </h1>
+              <p className="text-sm mt-1" style={{ color: textSecondaryOverlay }}>
+                {new Date(milestone.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – {new Date(milestone.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}{isMilestoneComplete && ' · Finished!'}
+              </p>
+            </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowSettingsModal(true)} className="text-left">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold" style={{ color: textPrimary }}>
-                    {milestone.title}
-                  </h1>
-                  <Pencil className="w-4 h-4" style={{ color: textMuted, opacity: 0.5, transform: 'translateY(2px)' }} />
-                </div>
-                <p className="text-sm mt-1" style={{ color: textSecondaryOverlay }}>
-                  {new Date(milestone.startDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})} – {new Date(milestone.endDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}{isMilestoneComplete && ' · Finished!'}
-                </p>
+              <CircularCountdown daysLeft={daysLeft} totalDays={totalDays} darkText={timeBasedDarkText} isComplete={isMilestoneComplete} />
+              <button
+                onClick={() => setShowSettingsModal(true)}
+                className="p-2 rounded-full"
+                style={{ color: textSecondaryOverlay }}
+              >
+                <MoreVertical className="w-5 h-5" />
               </button>
             </div>
-            <CircularCountdown daysLeft={daysLeft} totalDays={totalDays} darkText={timeBasedDarkText} isComplete={isMilestoneComplete} />
           </div>
           <div className="mt-5">
             <div className="flex justify-between text-sm mb-2">
@@ -1931,7 +1995,16 @@ function MilestoneView({ milestone, onUpdateMilestone, onBack, isDark, currentHo
       
       <TagsModal isOpen={showTagsModal} onClose={() => setShowTagsModal(false)} allTags={allTags} selectedTags={selectedTags} onTagsChange={setSelectedTags} onRenameTag={handleRenameTag} onDeleteTag={handleDeleteTag} isDark={isDark} />
       <AddModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} defaultTab={addModalDefaultTab} onAddTask={handleAddTask} onAddNote={handleAddNote} allTags={allTags} isDark={isDark} currentHour={currentHour} />
-      <GoalSettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} goal={goal} onSave={handleGoalSave} isDark={isDark} />
+      <GoalSettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        goal={goal}
+        onSave={handleGoalSave}
+        onDelete={() => { onDeleteMilestone(milestone.id); onBack(); }}
+        taskCount={tasks.length}
+        noteCount={standaloneNotes.length}
+        isDark={isDark}
+      />
       <NotesModal isOpen={!!notesTask} onClose={() => setNotesTask(null)} task={notesTask} onUpdateTask={handleUpdateTask} isDark={isDark} />
     </div>
   );
@@ -2099,6 +2172,10 @@ export default function VacationTracker() {
   const handleUpdateMilestone = (updatedMilestone) => {
     setMilestones(milestones.map(m => m.id === updatedMilestone.id ? updatedMilestone : m));
   };
+
+  const handleDeleteMilestone = (milestoneId) => {
+    setMilestones(milestones.filter(m => m.id !== milestoneId));
+  };
   
   const bgColor = isDark ? '#111827' : '#f9fafb';
   const { colors } = getTimeColors(currentHour);
@@ -2114,6 +2191,7 @@ export default function VacationTracker() {
           <MilestoneView
             milestone={milestone}
             onUpdateMilestone={handleUpdateMilestone}
+            onDeleteMilestone={handleDeleteMilestone}
             onBack={handleBackToDashboard}
             isDark={isDark}
             currentHour={currentHour}
