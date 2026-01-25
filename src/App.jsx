@@ -1253,6 +1253,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
 function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateMilestone, onDeleteMilestone, isDark, currentHour }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [settingsMilestone, setSettingsMilestone] = useState(null);
+  const [digestExpanded, setDigestExpanded] = useState(true);
 
   const { colors, darkText } = getTimeColors(currentHour);
   const greeting = getGreeting(Math.floor(currentHour));
@@ -1280,6 +1281,74 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
   const activeMilestones = sortedMilestones.filter(m => getMilestoneStatus(m.startDate, m.endDate) === 'active');
   const upcomingMilestones = sortedMilestones.filter(m => getMilestoneStatus(m.startDate, m.endDate) === 'upcoming');
   const completeMilestones = sortedMilestones.filter(m => getMilestoneStatus(m.startDate, m.endDate) === 'complete');
+
+  // Gather all incomplete/in-progress tasks from active milestones for digest
+  const showDigest = activeMilestones.length >= 2;
+  const allActiveTasks = useMemo(() => {
+    if (!showDigest) return [];
+
+    const tasks = [];
+    activeMilestones.forEach(milestone => {
+      (milestone.tasks || []).forEach(task => {
+        if (task.status !== STATUS.COMPLETE) {
+          tasks.push({
+            ...task,
+            milestoneId: milestone.id,
+            milestoneTitle: milestone.title,
+            taskCreatedAt: task.createdAt || milestone.createdAt || 0
+          });
+        }
+      });
+    });
+
+    // Sort: by due date (earliest first), then by creation date (newest first) for undated
+    return tasks.sort((a, b) => {
+      const aHasDue = !!a.dueDate;
+      const bHasDue = !!b.dueDate;
+
+      // Tasks with due dates come first
+      if (aHasDue && !bHasDue) return -1;
+      if (!aHasDue && bHasDue) return 1;
+
+      // Both have due dates - sort by date (earliest first)
+      if (aHasDue && bHasDue) {
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      }
+
+      // Neither has due date - sort by creation date (newest first)
+      return new Date(b.taskCreatedAt) - new Date(a.taskCreatedAt);
+    });
+  }, [activeMilestones, showDigest]);
+
+  const digestTasks = allActiveTasks.slice(0, 10);
+  const remainingTaskCount = allActiveTasks.length - 10;
+  const remainingMilestoneCount = remainingTaskCount > 0
+    ? new Set(allActiveTasks.slice(10).map(t => t.milestoneId)).size
+    : 0;
+
+  // Handle task completion from digest
+  const handleDigestTaskToggle = (task) => {
+    const milestone = milestones.find(m => m.id === task.milestoneId);
+    if (!milestone) return;
+
+    const newStatus = task.status === STATUS.COMPLETE ? STATUS.NOT_STARTED : STATUS.COMPLETE;
+    const updatedTask = { ...task, status: newStatus };
+    delete updatedTask.milestoneId;
+    delete updatedTask.milestoneTitle;
+    delete updatedTask.taskCreatedAt;
+
+    const otherTasks = milestone.tasks.filter(t => t.id !== task.id);
+    let newTasks;
+    if (newStatus === STATUS.COMPLETE) {
+      const incompleteTasks = otherTasks.filter(t => t.status !== STATUS.COMPLETE);
+      const completedTasks = otherTasks.filter(t => t.status === STATUS.COMPLETE);
+      newTasks = [...incompleteTasks, updatedTask, ...completedTasks];
+    } else {
+      newTasks = milestone.tasks.map(t => t.id === task.id ? updatedTask : t);
+    }
+
+    onUpdateMilestone({ ...milestone, tasks: newTasks });
+  };
 
   // Single milestone row (used inside grouped cards)
   const MilestoneRow = ({ milestone, showDivider }) => {
@@ -1419,6 +1488,75 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
             </div>
           ) : (
             <>
+              {/* Task Digest - shows when 2+ active milestones */}
+              {showDigest && allActiveTasks.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setDigestExpanded(!digestExpanded)}
+                    className="flex items-center gap-2 mb-4 w-full text-left"
+                  >
+                    <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
+                      Upcoming Tasks
+                    </h2>
+                    {digestExpanded ? (
+                      <ChevronUp className="w-4 h-4" style={{ color: textMuted }} />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" style={{ color: textMuted }} />
+                    )}
+                    <span className="text-xs" style={{ color: textMuted }}>({allActiveTasks.length})</span>
+                  </button>
+
+                  {digestExpanded && (
+                    <div
+                      className="rounded-2xl backdrop-blur-md overflow-hidden mb-8"
+                      style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}` }}
+                    >
+                      {digestTasks.map((task, index) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center gap-3 px-4 py-3"
+                          style={{ borderBottom: index < digestTasks.length - 1 ? `1px solid ${cardBorder}` : 'none' }}
+                        >
+                          {/* Status toggle */}
+                          <button
+                            onClick={() => handleDigestTaskToggle(task)}
+                            className="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+                            style={{
+                              borderColor: task.status === STATUS.IN_PROGRESS ? '#3b82f6' : textMuted,
+                              backgroundColor: task.status === STATUS.COMPLETE ? '#10b981' : 'transparent'
+                            }}
+                          >
+                            {task.status === STATUS.COMPLETE && <Check className="w-3 h-3 text-white" />}
+                            {task.status === STATUS.IN_PROGRESS && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                          </button>
+
+                          {/* Task content - tappable to go to milestone */}
+                          <button
+                            onClick={() => onSelectMilestone(task.milestoneId, task.id)}
+                            className="flex-1 min-w-0 text-left"
+                          >
+                            <p className="text-sm truncate" style={{ color: textPrimary }}>{task.title}</p>
+                            <p className="text-xs truncate" style={{ color: textMuted }}>
+                              {task.milestoneTitle}
+                              {task.dueDate && ` · ${new Date(task.dueDate + 'T00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                            </p>
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* "X more tasks" message */}
+                      {remainingTaskCount > 0 && (
+                        <div className="px-4 py-3 text-center" style={{ borderTop: `1px solid ${cardBorder}` }}>
+                          <p className="text-xs" style={{ color: textMuted }}>
+                            {remainingTaskCount} more task{remainingTaskCount !== 1 ? 's' : ''} across {remainingMilestoneCount} milestone{remainingMilestoneCount !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {activeMilestones.length > 0 && (
                 <div>
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Active</h2>
@@ -1482,7 +1620,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
 }
 
 // Milestone View Component (the existing task list view)
-function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack, isDark, currentHour }) {
+function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack, isDark, currentHour, initialEditTaskId }) {
   const [filterDate, setFilterDate] = useState(DATE_FILTERS.ALL);
   const [selectedTags, setSelectedTags] = useState([]);
   const [showTagsModal, setShowTagsModal] = useState(false);
@@ -1492,7 +1630,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
   const [showJournal, setShowJournal] = useState(false);
   const [notesTask, setNotesTask] = useState(null);
   const [savedSummary, setSavedSummary] = useState(() => localStorage.getItem(LOCAL_SUMMARY_PREFIX + milestone.id) || '');
-  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTaskId, setEditingTaskId] = useState(initialEditTaskId || null);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editNoteContent, setEditNoteContent] = useState('');
   const [editNoteDate, setEditNoteDate] = useState('');
@@ -2205,8 +2343,8 @@ export default function VacationTracker() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
-  const handleSelectMilestone = (milestoneId) => {
-    navigateTo({ view: VIEWS.MILESTONE, milestoneId });
+  const handleSelectMilestone = (milestoneId, editTaskId = null) => {
+    navigateTo({ view: VIEWS.MILESTONE, milestoneId, editTaskId });
   };
 
   const handleBackToDashboard = () => {
@@ -2244,6 +2382,7 @@ export default function VacationTracker() {
             onBack={handleBackToDashboard}
             isDark={isDark}
             currentHour={currentHour}
+            initialEditTaskId={displayView.editTaskId}
           />
         );
       }
