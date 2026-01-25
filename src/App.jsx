@@ -28,13 +28,28 @@ function getGreeting(hour) {
 }
 
 // Framed logo component
-function FramedLogo({ color = '#ffffff', size = 24 }) {
+function FramedLogo({ color = '#ffffff', size = 24, animate = false }) {
   const height = size;
   const width = size * (291 / 336); // maintain aspect ratio
+
+  const pathStyle = animate ? {
+    animation: 'logoSeparate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+  } : {};
+
   return (
-    <svg width={width} height={height} viewBox="0 0 291 336" fill="none">
-      <path d="M0 270.828V0H180.552V49.2414H49.2414V98.4827H164.138V147.724H49.2414V270.828H0Z" fill={color}/>
-      <path d="M290.552 65V335.828H110V286.586H241.31V237.345H126.414V188.103H241.31V65H290.552Z" fill={color}/>
+    <svg width={width} height={height} viewBox="0 0 291 336" fill="none" style={animate ? { overflow: 'visible' } : {}}>
+      <path
+        d="M0 270.828V0H180.552V49.2414H49.2414V98.4827H164.138V147.724H49.2414V270.828H0Z"
+        fill={color}
+        style={animate ? { ...pathStyle, '--logo-x': '12px', '--logo-y': '12px' } : {}}
+        className={animate ? 'logo-path-1' : ''}
+      />
+      <path
+        d="M290.552 65V335.828H110V286.586H241.31V237.345H126.414V188.103H241.31V65H290.552Z"
+        fill={color}
+        style={animate ? { ...pathStyle, '--logo-x': '-12px', '--logo-y': '-12px' } : {}}
+        className={animate ? 'logo-path-2' : ''}
+      />
     </svg>
   );
 }
@@ -1250,11 +1265,19 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
 }
 
 // Dashboard Component
-function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateMilestone, onDeleteMilestone, isDark, currentHour }) {
+function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateMilestone, onDeleteMilestone, isDark, currentHour, isInitialLoad, onIntroComplete }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [settingsMilestone, setSettingsMilestone] = useState(null);
   const [digestExpanded, setDigestExpanded] = useState(true);
   const [digestCompletedIds, setDigestCompletedIds] = useState(new Set()); // Track tasks completed from digest this session
+
+  // Mark intro as complete after animations finish
+  useEffect(() => {
+    if (isInitialLoad && onIntroComplete) {
+      const timer = setTimeout(() => onIntroComplete(), 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialLoad, onIntroComplete]);
 
   const { colors, darkText } = getTimeColors(currentHour);
   const greeting = getGreeting(Math.floor(currentHour));
@@ -1440,7 +1463,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
 
   return (
     <div className="fixed inset-0 overflow-y-auto overscroll-none" style={{ zIndex: 10 }}>
-      {/* Card and FAB hover styles */}
+      {/* Card and FAB hover styles + intro animations */}
       <style>{`
         .milestone-card {
           transition: background-color 0.2s ease, box-shadow 0.2s ease;
@@ -1470,14 +1493,40 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
           transform: scale(0.92);
           box-shadow: 0 2px 12px rgba(0,0,0,0.2);
         }
+
+        /* Intro animations */
+        @keyframes logoSeparate {
+          0% { transform: translate(var(--logo-x), var(--logo-y)) scale(0.95); }
+          100% { transform: translate(0, 0) scale(1); }
+        }
+        @keyframes fadeSlideIn {
+          0% { opacity: 0; transform: translateY(12px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fabPop {
+          0% { opacity: 0; transform: scale(0.5); }
+          70% { transform: scale(1.1); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .intro-header {
+          animation: fadeSlideIn 0.4s ease-out forwards;
+        }
+        .intro-section {
+          opacity: 0;
+          animation: fadeSlideIn 0.35s ease-out forwards;
+        }
+        .intro-fab {
+          opacity: 0;
+          animation: fabPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
       `}</style>
 
       {/* All content floats above the gradient */}
       <div className="pb-8 px-5" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
         {/* Header */}
-        <div className="pb-8">
+        <div className={`pb-8 ${isInitialLoad ? 'intro-header' : ''}`}>
           <div className="flex items-center gap-3 mb-2">
-            <FramedLogo color={textPrimary} size={34} />
+            <FramedLogo color={textPrimary} size={34} animate={isInitialLoad} />
             <span className="text-2xl font-bold tracking-tight" style={{ color: textPrimary, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
           </div>
           <p className="text-sm font-medium" style={{ color: textSecondary }}>{greeting}</p>
@@ -1489,7 +1538,10 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
         {/* Content */}
         <div className="px-0 sm:px-5 pb-28 space-y-8">
           {milestones.length === 0 ? (
-            <div className="text-center py-16">
+            <div
+              className={`text-center py-16 ${isInitialLoad ? 'intro-section' : ''}`}
+              style={isInitialLoad ? { animationDelay: '0.3s' } : {}}
+            >
               <div
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-md"
                 style={{ backgroundColor: cardBg }}
@@ -1510,7 +1562,10 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
             <>
               {/* Task Digest - shows when 2+ active milestones */}
               {showDigest && allActiveTasks.length > 0 && (
-                <div>
+                <div
+                  className={isInitialLoad ? 'intro-section' : ''}
+                  style={isInitialLoad ? { animationDelay: '0.3s' } : {}}
+                >
                   <button
                     onClick={() => setDigestExpanded(!digestExpanded)}
                     className="flex items-center gap-2 mb-4 w-full text-left"
@@ -1586,21 +1641,30 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               )}
 
               {activeMilestones.length > 0 && (
-                <div>
+                <div
+                  className={isInitialLoad ? 'intro-section' : ''}
+                  style={isInitialLoad ? { animationDelay: '0.4s' } : {}}
+                >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Active</h2>
                   <MilestoneGroup milestones={activeMilestones} />
                 </div>
               )}
 
               {upcomingMilestones.length > 0 && (
-                <div>
+                <div
+                  className={isInitialLoad ? 'intro-section' : ''}
+                  style={isInitialLoad ? { animationDelay: '0.5s' } : {}}
+                >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Upcoming</h2>
                   <MilestoneGroup milestones={upcomingMilestones} />
                 </div>
               )}
 
               {completeMilestones.length > 0 && (
-                <div>
+                <div
+                  className={isInitialLoad ? 'intro-section' : ''}
+                  style={isInitialLoad ? { animationDelay: '0.6s' } : {}}
+                >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Completed</h2>
                   <MilestoneGroup milestones={completeMilestones} />
                 </div>
@@ -1612,12 +1676,13 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
         {/* FAB */}
         <button
           onClick={() => setShowCreateModal(true)}
-          className="fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md"
+          className={`fab-button fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-30 backdrop-blur-md ${isInitialLoad ? 'intro-fab' : ''}`}
           style={{
             backgroundColor: 'rgba(255,255,255,0.25)',
             color: textPrimary,
             border: `1px solid ${cardBorder}`,
-            '--fab-glow': darkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)'
+            '--fab-glow': darkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
+            ...(isInitialLoad ? { animationDelay: '0.7s' } : {})
           }}
         >
           <Plus className="w-6 h-6" />
@@ -2230,6 +2295,7 @@ export default function VacationTracker() {
   const [currentView, setCurrentView] = useState({ view: VIEWS.DASHBOARD });
   const [loading, setLoading] = useState(true);
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours() + new Date().getMinutes() / 60);
+  const [hasPlayedIntro, setHasPlayedIntro] = useState(false);
 
   // Transition state
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -2425,6 +2491,8 @@ export default function VacationTracker() {
         onDeleteMilestone={handleDeleteMilestone}
         isDark={isDark}
         currentHour={currentHour}
+        isInitialLoad={!hasPlayedIntro}
+        onIntroComplete={() => setHasPlayedIntro(true)}
       />
     );
   };
