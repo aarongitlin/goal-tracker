@@ -35,7 +35,7 @@ function FramedLogo({ color = '#ffffff', size = 24, animate = false }) {
   // Animation starts after other elements have loaded, with a nice bounce
   const getPathStyle = (offsetX, offsetY) => animate ? {
     transform: `translate(${offsetX}px, ${offsetY}px) scale(0.97)`,
-    animation: 'logoSeparate 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.4) 1.3s forwards',
+    animation: 'logoSeparate 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.4) 0.8s forwards',
     '--logo-x': `${offsetX}px`,
     '--logo-y': `${offsetY}px`
   } : {};
@@ -1278,7 +1278,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
   // Mark intro as complete after animations finish
   useEffect(() => {
     if (isInitialLoad && onIntroComplete) {
-      const timer = setTimeout(() => onIntroComplete(), 2000);
+      const timer = setTimeout(() => onIntroComplete(), 1500);
       return () => clearTimeout(timer);
     }
   }, [isInitialLoad, onIntroComplete]);
@@ -1548,7 +1548,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
           {milestones.length === 0 ? (
             <div
               className={`text-center py-16 ${isInitialLoad ? 'intro-section' : ''}`}
-              style={isInitialLoad ? { animationDelay: '0.9s' } : {}}
+              style={isInitialLoad ? { animationDelay: '0.15s' } : {}}
             >
               <div
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-md"
@@ -1572,7 +1572,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {showDigest && allActiveTasks.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '0.9s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '0.15s' } : {}}
                 >
                   <button
                     onClick={() => setDigestExpanded(!digestExpanded)}
@@ -1651,7 +1651,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {activeMilestones.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '1.0s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '0.25s' } : {}}
                 >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Active</h2>
                   <MilestoneGroup milestones={activeMilestones} />
@@ -1661,7 +1661,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {upcomingMilestones.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '0.8s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '0.35s' } : {}}
                 >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Upcoming</h2>
                   <MilestoneGroup milestones={upcomingMilestones} />
@@ -1671,7 +1671,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {completeMilestones.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '0.9s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '0.45s' } : {}}
                 >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Completed</h2>
                   <MilestoneGroup milestones={completeMilestones} />
@@ -1690,7 +1690,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
             color: textPrimary,
             border: `1px solid ${cardBorder}`,
             '--fab-glow': darkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
-            ...(isInitialLoad ? { animationDelay: '1.0s' } : {})
+            ...(isInitialLoad ? { animationDelay: '0.55s' } : {})
           }}
         >
           <Plus className="w-6 h-6" />
