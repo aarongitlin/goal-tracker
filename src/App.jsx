@@ -1554,7 +1554,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
   };
   
   const handleAddTask = (task) => {
-    onUpdateMilestone({ ...milestone, tasks: [...tasks, task] });
+    onUpdateMilestone({ ...milestone, tasks: [task, ...tasks] });
   };
   
   const handleAddNote = (note) => {
