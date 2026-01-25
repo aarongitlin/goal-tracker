@@ -496,11 +496,11 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, onDelete, taskCount 
           <div className="flex flex-row gap-2 overflow-hidden">
             <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Start</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%', colorScheme: isDark ? 'dark' : 'light' }} />
             </div>
             <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>End</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%', colorScheme: isDark ? 'dark' : 'light' }} />
             </div>
           </div>
 
@@ -607,11 +607,11 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }
           <div className="flex flex-row gap-2 overflow-hidden">
             <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Start</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%', colorScheme: isDark ? 'dark' : 'light' }} />
             </div>
             <div style={{ flex: '1 1 0', minWidth: 0 }}>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>End</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%' }} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%', colorScheme: isDark ? 'dark' : 'light' }} />
             </div>
           </div>
           <button onClick={handleCreate} disabled={!title.trim()} className="w-full py-3 rounded-lg font-medium text-white disabled:opacity-50" style={{ background: accentGradient }}>Create Milestone</button>
@@ -787,7 +787,7 @@ function NotesModal({ isOpen, onClose, task, onUpdateTask, isDark }) {
         <div className="p-4 flex-shrink-0" style={{ borderBottom: `1px solid ${inputBorder}` }}>
           <textarea value={newNoteContent} onChange={(e) => setNewNoteContent(e.target.value)} placeholder="Add a note..." rows={2} className="w-full px-3 py-2 rounded-lg text-sm resize-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
           <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: textSecondary }} /><input type="date" value={newNoteDate} onChange={(e) => setNewNoteDate(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} /></div>
+            <div className="flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: textSecondary }} /><input type="date" value={newNoteDate} onChange={(e) => setNewNoteDate(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, colorScheme: isDark ? 'dark' : 'light' }} /></div>
             <button onClick={handleAddNote} disabled={!newNoteContent.trim()} className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">Add Note</button>
           </div>
         </div>
@@ -798,7 +798,7 @@ function NotesModal({ isOpen, onClose, task, onUpdateTask, isDark }) {
                 <div className="space-y-2">
                   <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={2} className="w-full px-2 py-1 rounded text-sm resize-none" style={{ backgroundColor: inputBg, border: `1px solid #3b82f6`, color: textPrimary }} autoFocus />
                   <div className="flex items-center justify-between">
-                    <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+                    <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, colorScheme: isDark ? 'dark' : 'light' }} />
                     <div className="flex gap-2"><button onClick={() => setEditingNoteId(null)} className="text-sm" style={{ color: textSecondary }}>Cancel</button><button onClick={handleSaveEdit} className="text-sm text-blue-500 font-medium">Save</button></div>
                   </div>
                 </div>
@@ -865,7 +865,7 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
                         <div className="space-y-2">
                           <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={2} className="w-full px-2 py-1 rounded text-sm resize-none" style={{ backgroundColor: inputBg, border: `1px solid #3b82f6`, color: textPrimary }} autoFocus />
                           <div className="flex items-center justify-between">
-                            <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+                            <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, colorScheme: isDark ? 'dark' : 'light' }} />
                             <div className="flex gap-2"><button onClick={() => setEditingNoteId(null)} className="text-sm" style={{ color: textSecondary }}>Cancel</button><button onClick={() => handleSaveEdit(note)} className="text-sm text-blue-500 font-medium">Save</button></div>
                           </div>
                         </div>
@@ -1196,7 +1196,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
                     onChange={(e) => { setDueDate(e.target.value); setShowDatePicker(false); }}
                     onBlur={() => setShowDatePicker(false)}
                     className="text-sm bg-transparent border-none focus:outline-none"
-                    style={{ color: textPrimary, colorScheme: 'dark' }}
+                    style={{ color: textPrimary, colorScheme: isDark ? 'dark' : 'light' }}
                     autoFocus
                   />
                   {dueDate && (
@@ -1236,7 +1236,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Date</label>
-              <input type="date" value={noteDate} onChange={(e) => setNoteDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none' }} />
+              <input type="date" value={noteDate} onChange={(e) => setNoteDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', colorScheme: isDark ? 'dark' : 'light' }} />
             </div>
             <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
               <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Note</button>
