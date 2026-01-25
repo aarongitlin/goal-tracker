@@ -1254,6 +1254,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [settingsMilestone, setSettingsMilestone] = useState(null);
   const [digestExpanded, setDigestExpanded] = useState(true);
+  const [digestCompletedIds, setDigestCompletedIds] = useState(new Set()); // Track tasks completed from digest this session
 
   const { colors, darkText } = getTimeColors(currentHour);
   const greeting = getGreeting(Math.floor(currentHour));
@@ -1283,6 +1284,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
   const completeMilestones = sortedMilestones.filter(m => getMilestoneStatus(m.startDate, m.endDate) === 'complete');
 
   // Gather all incomplete/in-progress tasks from active milestones for digest
+  // Also include completed tasks that were completed from the digest this session
   const showDigest = activeMilestones.length >= 2;
   const allActiveTasks = useMemo(() => {
     if (!showDigest) return [];
@@ -1290,7 +1292,8 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
     const tasks = [];
     activeMilestones.forEach(milestone => {
       (milestone.tasks || []).forEach(task => {
-        if (task.status !== STATUS.COMPLETE) {
+        // Include incomplete tasks OR tasks completed from digest this session
+        if (task.status !== STATUS.COMPLETE || digestCompletedIds.has(task.id)) {
           tasks.push({
             ...task,
             milestoneId: milestone.id,
@@ -1301,8 +1304,14 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
       });
     });
 
-    // Sort: by due date (earliest first), then by creation date (newest first) for undated
+    // Sort: completed tasks at bottom, then by due date (earliest first), then by creation date (newest first)
     return tasks.sort((a, b) => {
+      // Completed tasks go to bottom
+      const aComplete = a.status === STATUS.COMPLETE;
+      const bComplete = b.status === STATUS.COMPLETE;
+      if (aComplete && !bComplete) return 1;
+      if (!aComplete && bComplete) return -1;
+
       const aHasDue = !!a.dueDate;
       const bHasDue = !!b.dueDate;
 
@@ -1318,7 +1327,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
       // Neither has due date - sort by creation date (newest first)
       return new Date(b.taskCreatedAt) - new Date(a.taskCreatedAt);
     });
-  }, [activeMilestones, showDigest]);
+  }, [activeMilestones, showDigest, digestCompletedIds]);
 
   const digestTasks = allActiveTasks.slice(0, 10);
   const remainingTaskCount = allActiveTasks.length - 10;
@@ -1336,6 +1345,17 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
     delete updatedTask.milestoneId;
     delete updatedTask.milestoneTitle;
     delete updatedTask.taskCreatedAt;
+
+    // Track completed tasks from digest for this session
+    if (newStatus === STATUS.COMPLETE) {
+      setDigestCompletedIds(prev => new Set([...prev, task.id]));
+    } else {
+      setDigestCompletedIds(prev => {
+        const next = new Set(prev);
+        next.delete(task.id);
+        return next;
+      });
+    }
 
     const otherTasks = milestone.tasks.filter(t => t.id !== task.id);
     let newTasks;
@@ -1535,7 +1555,15 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
                             onClick={() => onSelectMilestone(task.milestoneId, task.id)}
                             className="flex-1 min-w-0 text-left"
                           >
-                            <p className="text-sm truncate" style={{ color: textPrimary }}>{task.title}</p>
+                            <p
+                              className="text-sm truncate"
+                              style={{
+                                color: task.status === STATUS.COMPLETE ? textMuted : textPrimary,
+                                textDecoration: task.status === STATUS.COMPLETE ? 'line-through' : 'none'
+                              }}
+                            >
+                              {task.title}
+                            </p>
                             <p className="text-xs truncate" style={{ color: textMuted }}>
                               {task.milestoneTitle}
                               {task.dueDate && ` · ${new Date(task.dueDate + 'T00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
