@@ -35,7 +35,7 @@ function FramedLogo({ color = '#ffffff', size = 24, animate = false }) {
   // Animation starts after other elements have loaded, with a nice bounce
   const getPathStyle = (offsetX, offsetY) => animate ? {
     transform: `translate(${offsetX}px, ${offsetY}px) scale(0.97)`,
-    animation: 'logoSeparate 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.4) 0.8s forwards',
+    animation: 'logoSeparate 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.4) 1.1s forwards',
     '--logo-x': `${offsetX}px`,
     '--logo-y': `${offsetY}px`
   } : {};
@@ -45,13 +45,13 @@ function FramedLogo({ color = '#ffffff', size = 24, animate = false }) {
       <path
         d="M0 270.828V0H180.552V49.2414H49.2414V98.4827H164.138V147.724H49.2414V270.828H0Z"
         fill={color}
-        style={getPathStyle(15, 15)}
+        style={getPathStyle(22, 22)}
         className={animate ? 'logo-path-1' : ''}
       />
       <path
         d="M290.552 65V335.828H110V286.586H241.31V237.345H126.414V188.103H241.31V65H290.552Z"
         fill={color}
-        style={getPathStyle(-15, -15)}
+        style={getPathStyle(-22, -22)}
         className={animate ? 'logo-path-2' : ''}
       />
     </svg>
@@ -1278,7 +1278,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
   // Mark intro as complete after animations finish
   useEffect(() => {
     if (isInitialLoad && onIntroComplete) {
-      const timer = setTimeout(() => onIntroComplete(), 1500);
+      const timer = setTimeout(() => onIntroComplete(), 1800);
       return () => clearTimeout(timer);
     }
   }, [isInitialLoad, onIntroComplete]);
