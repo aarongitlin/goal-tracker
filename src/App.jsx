@@ -1532,7 +1532,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
       {/* All content floats above the gradient */}
       <div className="pb-8 px-5" style={{ paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))' }}>
         {/* Header */}
-        <div className={`pb-8 ${isInitialLoad ? 'intro-header' : ''}`}>
+        <div className="pb-8">
           <div className="flex items-center gap-3 mb-2">
             <FramedLogo color={textPrimary} size={34} animate={isInitialLoad} />
             <span className="text-2xl font-bold tracking-tight" style={{ color: textPrimary, fontFamily: "'Space Grotesk', sans-serif" }}>Framed</span>
