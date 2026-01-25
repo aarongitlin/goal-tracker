@@ -33,7 +33,7 @@ function FramedLogo({ color = '#ffffff', size = 24, animate = false }) {
   const width = size * (291 / 336); // maintain aspect ratio
 
   const pathStyle = animate ? {
-    animation: 'logoSeparate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
+    animation: 'logoSeparate 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards'
   } : {};
 
   return (
@@ -1274,7 +1274,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
   // Mark intro as complete after animations finish
   useEffect(() => {
     if (isInitialLoad && onIntroComplete) {
-      const timer = setTimeout(() => onIntroComplete(), 1200);
+      const timer = setTimeout(() => onIntroComplete(), 1500);
       return () => clearTimeout(timer);
     }
   }, [isInitialLoad, onIntroComplete]);
@@ -1499,6 +1499,10 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
           0% { transform: translate(var(--logo-x), var(--logo-y)) scale(0.95); }
           100% { transform: translate(0, 0) scale(1); }
         }
+        @keyframes fadeIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
         @keyframes fadeSlideIn {
           0% { opacity: 0; transform: translateY(12px); }
           100% { opacity: 1; transform: translateY(0); }
@@ -1509,7 +1513,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
           100% { opacity: 1; transform: scale(1); }
         }
         .intro-header {
-          animation: fadeSlideIn 0.4s ease-out forwards;
+          animation: fadeIn 0.5s ease-out forwards;
         }
         .intro-section {
           opacity: 0;
@@ -1540,7 +1544,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
           {milestones.length === 0 ? (
             <div
               className={`text-center py-16 ${isInitialLoad ? 'intro-section' : ''}`}
-              style={isInitialLoad ? { animationDelay: '0.3s' } : {}}
+              style={isInitialLoad ? { animationDelay: '0.9s' } : {}}
             >
               <div
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-md"
@@ -1564,7 +1568,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {showDigest && allActiveTasks.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '0.3s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '0.9s' } : {}}
                 >
                   <button
                     onClick={() => setDigestExpanded(!digestExpanded)}
@@ -1643,7 +1647,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {activeMilestones.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '0.4s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '1.0s' } : {}}
                 >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Active</h2>
                   <MilestoneGroup milestones={activeMilestones} />
@@ -1653,7 +1657,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {upcomingMilestones.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '0.5s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '0.8s' } : {}}
                 >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Upcoming</h2>
                   <MilestoneGroup milestones={upcomingMilestones} />
@@ -1663,7 +1667,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               {completeMilestones.length > 0 && (
                 <div
                   className={isInitialLoad ? 'intro-section' : ''}
-                  style={isInitialLoad ? { animationDelay: '0.6s' } : {}}
+                  style={isInitialLoad ? { animationDelay: '0.9s' } : {}}
                 >
                   <h2 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: textMuted }}>Completed</h2>
                   <MilestoneGroup milestones={completeMilestones} />
@@ -1682,7 +1686,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
             color: textPrimary,
             border: `1px solid ${cardBorder}`,
             '--fab-glow': darkText ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
-            ...(isInitialLoad ? { animationDelay: '0.7s' } : {})
+            ...(isInitialLoad ? { animationDelay: '1.0s' } : {})
           }}
         >
           <Plus className="w-6 h-6" />
