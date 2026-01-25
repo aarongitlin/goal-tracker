@@ -478,7 +478,7 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, onDelete, taskCount 
     if (taskCount > 0) parts.push(`${taskCount} task${taskCount !== 1 ? 's' : ''}`);
     if (noteCount > 0) parts.push(`${noteCount} note${noteCount !== 1 ? 's' : ''}`);
     if (parts.length === 0) return 'Delete this empty milestone?';
-    return `Delete ${parts.join(' and ')}?`;
+    return `Delete milestone, with ${parts.join(' and ')}?`;
   };
 
   return (
