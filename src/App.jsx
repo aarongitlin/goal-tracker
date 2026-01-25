@@ -1542,7 +1542,22 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
   const todayFormatted = formatToday();
   
   const handleUpdateTask = (updatedTask) => {
-    const newTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+    const oldTask = tasks.find(t => t.id === updatedTask.id);
+    const wasComplete = oldTask?.status === STATUS.COMPLETE;
+    const isNowComplete = updatedTask.status === STATUS.COMPLETE;
+
+    let newTasks;
+    if (!wasComplete && isNowComplete) {
+      // Task just completed - move it below incomplete tasks but above other completed tasks
+      const otherTasks = tasks.filter(t => t.id !== updatedTask.id);
+      const incompleteTasks = otherTasks.filter(t => t.status !== STATUS.COMPLETE);
+      const completedTasks = otherTasks.filter(t => t.status === STATUS.COMPLETE);
+      newTasks = [...incompleteTasks, updatedTask, ...completedTasks];
+    } else {
+      // Normal update - keep position
+      newTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+    }
+
     onUpdateMilestone({ ...milestone, tasks: newTasks });
     if (notesTask && notesTask.id === updatedTask.id) setNotesTask(updatedTask);
   };
