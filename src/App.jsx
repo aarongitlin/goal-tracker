@@ -494,17 +494,17 @@ function GoalSettingsModal({ isOpen, onClose, goal, onSave, onDelete, taskCount 
   // Build delete warning message
   const getDeleteMessage = () => {
     const parts = [];
-    if (taskCount > 0) parts.push(`${taskCount} task${taskCount !== 1 ? 's' : ''}`);
-    if (noteCount > 0) parts.push(`${noteCount} note${noteCount !== 1 ? 's' : ''}`);
-    if (parts.length === 0) return 'Delete this empty milestone?';
-    return `Delete milestone, with ${parts.join(' and ')}?`;
+    if (taskCount > 0) parts.push(`${taskCount} goal${taskCount !== 1 ? 's' : ''}`);
+    if (noteCount > 0) parts.push(`${noteCount} thought${noteCount !== 1 ? 's' : ''}`);
+    if (parts.length === 0) return 'Delete this empty frame?';
+    return `Delete frame, with ${parts.join(' and ')}?`;
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
       <div className="w-full sm:max-w-md rounded-xl mx-4 sm:mx-0" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
-          <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Milestone Settings</h2>
+          <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Frame Settings</h2>
           <button onClick={onClose} style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
         </div>
         <div className="p-4 space-y-4">
@@ -615,7 +615,7 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
       <div className="w-full sm:max-w-md sm:rounded-xl rounded-xl mx-4 sm:mx-0" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center" style={{ borderBottom: `1px solid ${inputBorder}` }}>
-          <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>New Milestone</h2>
+          <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>New Frame</h2>
           <button onClick={onClose} style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
         </div>
         <div className="p-4 space-y-4">
@@ -633,7 +633,7 @@ function CreateMilestoneModal({ isOpen, onClose, onCreate, isDark, currentHour }
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', maxWidth: '100%', colorScheme: isDark ? 'dark' : 'light' }} />
             </div>
           </div>
-          <button onClick={handleCreate} disabled={!title.trim()} className="w-full py-3 rounded-lg font-medium text-white disabled:opacity-50" style={{ background: accentGradient }}>Create Milestone</button>
+          <button onClick={handleCreate} disabled={!title.trim()} className="w-full py-3 rounded-lg font-medium text-white disabled:opacity-50" style={{ background: accentGradient }}>Create Frame</button>
         </div>
       </div>
     </div>
@@ -748,7 +748,7 @@ function MilestoneSummary({ tasks, standaloneNotes, goal, isDark, savedSummary, 
           </div>
           <div className="text-left">
             <h3 className="font-semibold" style={{ color: textPrimary }}>AI Reflection</h3>
-            <p className="text-sm" style={{ color: textSecondary }}>{summary ? 'Your milestone summary' : 'Generate a summary of your journey'}</p>
+            <p className="text-sm" style={{ color: textSecondary }}>{summary ? 'Your frame summary' : 'Generate a summary of your journey'}</p>
           </div>
         </div>
         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: textSecondary }} /> : summary ? (isExpanded ? <ChevronUp className="w-5 h-5" style={{ color: textSecondary }} /> : <ChevronDown className="w-5 h-5" style={{ color: textSecondary }} />) : <ChevronRight className="w-5 h-5" style={{ color: textSecondary }} />}
@@ -800,18 +800,18 @@ function NotesModal({ isOpen, onClose, task, onUpdateTask, isDark }) {
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 pt-12 sm:pt-0" onClick={onClose}>
       <div className="w-full sm:max-w-lg rounded-xl mx-4 sm:mx-0 max-h-[85vh] overflow-hidden flex flex-col" style={{ backgroundColor: modalBg }} onClick={e => e.stopPropagation()}>
         <div className="p-4 flex justify-between items-center flex-shrink-0" style={{ borderBottom: `1px solid ${inputBorder}` }}>
-          <div><h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Notes</h2><p className="text-sm" style={{ color: textSecondary }}>{task.title}</p></div>
+          <div><h2 className="text-lg font-semibold" style={{ color: textPrimary }}>Thoughts</h2><p className="text-sm" style={{ color: textSecondary }}>{task.title}</p></div>
           <button onClick={onClose} className="p-2 rounded-full" style={{ color: textSecondary }}><X className="w-5 h-5" /></button>
         </div>
         <div className="p-4 flex-shrink-0" style={{ borderBottom: `1px solid ${inputBorder}` }}>
           <textarea value={newNoteContent} onChange={(e) => setNewNoteContent(e.target.value)} placeholder="Add a note..." rows={2} className="w-full px-3 py-2 rounded-lg text-sm resize-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: textSecondary }} /><input type="date" value={newNoteDate} onChange={(e) => setNewNoteDate(e.target.value)} className="text-sm px-2 py-1 rounded" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, colorScheme: isDark ? 'dark' : 'light' }} /></div>
-            <button onClick={handleAddNote} disabled={!newNoteContent.trim()} className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">Add Note</button>
+            <button onClick={handleAddNote} disabled={!newNoteContent.trim()} className="px-4 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">Add Thought</button>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {sortedNotes.length === 0 ? <p className="text-center py-8" style={{ color: textSecondary }}>No notes yet</p> : sortedNotes.map(note => (
+          {sortedNotes.length === 0 ? <p className="text-center py-8" style={{ color: textSecondary }}>No thoughts yet</p> : sortedNotes.map(note => (
             <div key={note.id} className="p-3 rounded-lg" style={{ backgroundColor: noteBg }}>
               {editingNoteId === note.id ? (
                 <div className="space-y-2">
@@ -871,7 +871,7 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {dateKeys.length === 0 ? (
-          <div className="text-center py-16"><BookOpen className="w-12 h-12 mx-auto mb-4" style={{ color: textSecondary }} /><p className="text-lg font-medium" style={{ color: textPrimary }}>No notes yet</p><p className="text-sm mt-1" style={{ color: textSecondary }}>Tap + to add your first note</p></div>
+          <div className="text-center py-16"><BookOpen className="w-12 h-12 mx-auto mb-4" style={{ color: textSecondary }} /><p className="text-lg font-medium" style={{ color: textPrimary }}>No thoughts yet</p><p className="text-sm mt-1" style={{ color: textSecondary }}>Tap + to add your first note</p></div>
         ) : (
           <div className="space-y-6">
             {dateKeys.map(dateKey => (
@@ -891,7 +891,7 @@ function JournalView({ tasks, standaloneNotes, onUpdateTask, onUpdateStandaloneN
                       ) : (
                         <><p className="text-sm" style={{ color: textPrimary }}>{note.content}</p>
                           <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            {note.type === 'task' ? (<><span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: textSecondary }}>{note.taskTitle}</span>{note.taskTags.slice(0, 2).map(tag => <TagBadge key={tag} tag={tag} isDark={isDark} />)}</>) : (<span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}>Journal Entry</span>)}
+                            {note.type === 'task' ? (<><span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? '#374151' : '#e5e7eb', color: textSecondary }}>{note.taskTitle}</span>{note.taskTags.slice(0, 2).map(tag => <TagBadge key={tag} tag={tag} isDark={isDark} />)}</>) : (<span className="text-xs font-medium px-2 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(59,130,246,0.2)' : '#dbeafe', color: isDark ? '#93c5fd' : '#2563eb' }}>Thought</span>)}
                             <span className="flex-1" /><button onClick={() => handleStartEdit(note)} className="text-xs" style={{ color: textSecondary }}>Edit</button><button onClick={() => handleDeleteNote(note)} className="text-xs text-red-500">Delete</button>
                           </div>
                         </>
@@ -1047,7 +1047,7 @@ function TaskItem({ task, onUpdate, onDelete, allTags, isDark, onOpenNotes, onDr
                     <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: noteCount > 0 ? '#3b82f6' : (isDark ? '#374151' : '#d1d5db'), color: noteCount > 0 ? 'white' : textMuted }}>
                       <BookOpen className="w-3 h-3" />
                     </span>
-                    <span className="text-xs">{noteCount > 0 ? noteCount : 'Note'}</span>
+                    <span className="text-xs">{noteCount > 0 ? noteCount : 'Thought'}</span>
                   </button>
                   {/* Deadline button / picker */}
                   {!isMilestoneComplete && (
@@ -1175,7 +1175,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
               style={{ background: activeTab === 'task' ? accentGradient : 'transparent', color: activeTab === 'task' ? 'white' : textSecondary }}
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Task</span>
+              <span>Goal</span>
             </button>
             <button
               onClick={() => setActiveTab('note')}
@@ -1183,7 +1183,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
               style={{ background: activeTab === 'note' ? accentGradient : 'transparent', color: activeTab === 'note' ? 'white' : textSecondary }}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Note</span>
+              <span>Thought</span>
             </button>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/10 transition-colors" style={{ color: textSecondary }}>
@@ -1201,7 +1201,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
         {activeTab === 'task' && (
           <form onSubmit={handleSubmitTask} className="p-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Task Title</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Goal Title</label>
               <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} placeholder="What do you want to accomplish?" autoFocus />
             </div>
             <div className="flex items-center gap-3">
@@ -1243,14 +1243,14 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
               <TagEditor selectedTags={selectedTags} onTagsChange={setSelectedTags} allTags={allTags} isDark={isDark} />
             </div>
             <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
-              <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Task</button>
+              <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Goal</button>
             </div>
           </form>
         )}
         {activeTab === 'note' && (
           <form onSubmit={handleSubmitNote} className="p-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Note</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: textSecondary }}>Thought</label>
               <textarea value={noteContent} onChange={(e) => setNoteContent(e.target.value)} placeholder="What's on your mind?" rows={4} className="w-full px-3 py-2 rounded-lg resize-none box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} autoFocus />
             </div>
             <div>
@@ -1258,7 +1258,7 @@ function AddModal({ isOpen, onClose, defaultTab, onAddTask, onAddNote, allTags, 
               <input type="date" value={noteDate} onChange={(e) => setNoteDate(e.target.value)} className="w-full px-3 py-2 rounded-lg box-border" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary, WebkitAppearance: 'none', colorScheme: isDark ? 'dark' : 'light' }} />
             </div>
             <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
-              <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Note</button>
+              <button type="submit" className="w-full py-3 rounded-lg font-medium text-white" style={{ background: accentGradient }}>Add Thought</button>
             </div>
           </form>
         )}
@@ -1539,7 +1539,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
           </div>
           <p className="text-sm font-medium" style={{ color: textSecondary }}>{greeting}</p>
           <p className="text-sm mt-2" style={{ color: textMuted }}>
-            {milestones.length} milestone{milestones.length !== 1 ? 's' : ''} · {activeMilestones.length} active
+            {milestones.length} frame{milestones.length !== 1 ? 's' : ''} · {activeMilestones.length} active
           </p>
         </div>
 
@@ -1556,14 +1556,14 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
               >
                 <Calendar className="w-8 h-8" style={{ color: textSecondary }} />
               </div>
-              <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>No milestones yet</h2>
-              <p className="text-sm mt-2 mb-6" style={{ color: textSecondary }}>Create your first milestone to start tracking goals</p>
+              <h2 className="text-lg font-semibold" style={{ color: textPrimary }}>No frames yet</h2>
+              <p className="text-sm mt-2 mb-6" style={{ color: textSecondary }}>Create your first frame to start tracking</p>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="px-6 py-3 rounded-xl font-medium backdrop-blur-md transition-all active:scale-[0.98]"
                 style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: textPrimary, border: `1px solid ${cardBorder}` }}
               >
-                Create Milestone
+                Create Frame
               </button>
             </div>
           ) : (
@@ -1579,7 +1579,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
                     className="flex items-center gap-2 mb-4 w-full text-left"
                   >
                     <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
-                      Upcoming Tasks
+                      Upcoming Goals
                     </h2>
                     {digestExpanded ? (
                       <ChevronUp className="w-4 h-4" style={{ color: textMuted }} />
@@ -1639,7 +1639,7 @@ function Dashboard({ milestones, onSelectMilestone, onCreateMilestone, onUpdateM
                       {remainingTaskCount > 0 && (
                         <div className="px-4 py-3 text-center" style={{ borderTop: `1px solid ${cardBorder}` }}>
                           <p className="text-xs" style={{ color: textMuted }}>
-                            {remainingTaskCount} more task{remainingTaskCount !== 1 ? 's' : ''} across {remainingMilestoneCount} milestone{remainingMilestoneCount !== 1 ? 's' : ''}
+                            {remainingTaskCount} more goal{remainingTaskCount !== 1 ? 's' : ''} across {remainingMilestoneCount} frame{remainingMilestoneCount !== 1 ? 's' : ''}
                           </p>
                         </div>
                       )}
@@ -2134,7 +2134,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
           <div className="flex justify-between items-center gap-2">
             <div className="flex gap-2 overflow-x-auto pb-2 -mb-2">
               {isMilestoneComplete ? (
-                <button onClick={() => setFilterDate(DATE_FILTERS.ALL)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap backdrop-blur-md" style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? cardBg : 'rgba(255,255,255,0.1)', color: textPrimary, border: `1px solid ${cardBorder}` }}>All Tasks</button>
+                <button onClick={() => setFilterDate(DATE_FILTERS.ALL)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap backdrop-blur-md" style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? cardBg : 'rgba(255,255,255,0.1)', color: textPrimary, border: `1px solid ${cardBorder}` }}>All Goals</button>
               ) : (
                 <>
                   <button onClick={() => setFilterDate(DATE_FILTERS.ALL)} className="px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap backdrop-blur-md" style={{ backgroundColor: filterDate === DATE_FILTERS.ALL ? cardBg : 'rgba(255,255,255,0.1)', color: textPrimary, border: `1px solid ${cardBorder}` }}>All</button>
@@ -2150,7 +2150,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
                 style={{ backgroundColor: !showJournal ? cardBg : 'transparent', color: !showJournal ? textPrimary : textSecondaryOverlay }}
               >
                 <Check className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                <span className="hidden sm:inline">Tasks</span>
+                <span className="hidden sm:inline">Goals</span>
               </button>
               <button
                 onClick={() => setShowJournal(true)}
@@ -2158,7 +2158,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
                 style={{ backgroundColor: showJournal ? cardBg : 'transparent', color: showJournal ? textPrimary : textSecondaryOverlay }}
               >
                 <BookOpen className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                <span className="hidden sm:inline">Notes</span>
+                <span className="hidden sm:inline">Thoughts</span>
                 {totalNotes > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs bg-blue-500 text-white">{totalNotes > 9 ? '9+' : totalNotes}</span>}
               </button>
             </div>
@@ -2203,7 +2203,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
                 </div>
               );
             })}
-            {!filteredTasks.length && <div className="text-center py-12" style={{ color: textSecondaryOverlay }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No tasks match filters' : 'No tasks yet'}</div>}
+            {!filteredTasks.length && <div className="text-center py-12" style={{ color: textSecondaryOverlay }}>{filterDate !== DATE_FILTERS.ALL || isTagFiltering ? 'No goals match filters' : 'No goals yet'}</div>}
           </div>
 
           {/* Notes */}
@@ -2214,7 +2214,7 @@ function MilestoneView({ milestone, onUpdateMilestone, onDeleteMilestone, onBack
             {dateKeys.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-10 h-10 mx-auto mb-3" style={{ color: textSecondaryOverlay, opacity: 0.5 }} />
-                <p className="text-sm" style={{ color: textSecondaryOverlay }}>No notes yet</p>
+                <p className="text-sm" style={{ color: textSecondaryOverlay }}>No thoughts yet</p>
               </div>
             ) : (
               dateKeys.map(dateKey => (
