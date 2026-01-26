@@ -10,15 +10,17 @@
   <!-- Background -->
   <rect width="1200" height="630" fill="url(#bg)"/>
 
-  <!-- Logo - Two F's -->
-  <g transform="translate(480, 180) scale(0.5)">
-    <path d="M0 270.828V0H180.552V49.2414H49.2414V98.4827H164.138V147.724H49.2414V270.828H0Z" fill="white"/>
-    <path d="M290.552 65V335.828H110V286.586H241.31V237.345H126.414V188.103H241.31V65H290.552Z" fill="white"/>
+  <!-- Logo + Framed lockup (horizontal, centered) -->
+  <g transform="translate(600, 280)">
+    <!-- Logo - Two F's (scaled to ~60px height) -->
+    <g transform="translate(-195, -30) scale(0.18)">
+      <path d="M0 270.828V0H180.552V49.2414H49.2414V98.4827H164.138V147.724H49.2414V270.828H0Z" fill="white"/>
+      <path d="M290.552 65V335.828H110V286.586H241.31V237.345H126.414V188.103H241.31V65H290.552Z" fill="white"/>
+    </g>
+    <!-- App Name -->
+    <text x="10" y="18" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="white">Framed</text>
   </g>
 
-  <!-- App Name -->
-  <text x="600" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="white" text-anchor="middle">Framed</text>
-
   <!-- Tagline -->
-  <text x="600" y="480" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="rgba(255,255,255,0.8)" text-anchor="middle">Track your goals and thoughts, one frame at a time.</text>
+  <text x="600" y="400" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="rgba(255,255,255,0.8)" text-anchor="middle">Track your goals and thoughts, one frame at a time.</text>
 </svg>
